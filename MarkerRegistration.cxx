@@ -11,14 +11,10 @@
 #include "itkSymmetricSecondRankTensor.h"
 #include "itkLabelToNeedleImageFilter.h"
 
-#include "itkOtsuThresholdImageFilter.h"
 #include "itkConnectedComponentImageFilter.h"
 #include "itkRelabelComponentImageFilter.h"
 #include "itkMinimumMaximumImageFilter.h"
-
-//#include "itkMultiplyByConstantImageFilter.h"
 #include "itkTransformFileWriter.h"
-
 #include "itkHessian3DToVesselnessMeasureImageFilter.h"
 #include "itkMultiScaleHessianBasedMeasureImageFilter.h"
 #include "itkRescaleIntensityImageFilter.h"
@@ -28,6 +24,7 @@
 #include "itkImageFileReader.h"
 #include "itkImageFileWriter.h"
 #include "itkCastImageFilter.h"
+#include "itkBinaryThresholdImageFilter.h"
 
 
 #include "itkPluginUtilities.h"
@@ -55,8 +52,8 @@ template<class T> int DoIt( int argc, char * argv[], T )
   typedef   itk::Image< OutputPixelType, Dimension >    OutputImageType;
 
   typedef   itk::ImageFileReader< InternalImageType >  ReaderType;
-  //typedef   itk::ImageFileWriter< OutputImageType > WriterType;
-  typedef   itk::ImageFileWriter< InternalImageType > WriterType;
+  typedef   itk::ImageFileWriter< OutputImageType > WriterType;
+  //typedef   itk::ImageFileWriter< InternalImageType > WriterType;
 
   // Smoothing filter
   typedef   itk::SmoothingRecursiveGaussianImageFilter<
@@ -68,11 +65,8 @@ template<class T> int DoIt( int argc, char * argv[], T )
   //typedef   itk::Hessian3DToNeedleImageFilter<
   //  InternalPixelType > LineFilterType;
 
-  // Otsu Threshold Segmentation filter
-  typedef   itk::OtsuThresholdImageFilter<
-    InternalImageType, InternalImageType >  OtsuFilterType;
   typedef   itk::ConnectedComponentImageFilter<
-    InternalImageType, OutputImageType >  CCFilterType;
+    OutputImageType, OutputImageType >  CCFilterType;
   typedef   itk::RelabelComponentImageFilter<
     OutputImageType, OutputImageType > RelabelType;
   // Line detection filter
@@ -91,20 +85,17 @@ template<class T> int DoIt( int argc, char * argv[], T )
   typedef itk::MultiScaleHessianBasedMeasureImageFilter< InternalImageType, HessianImageType, InternalImageType >
     MultiScaleEnhancementFilterType;
 
+  typedef itk::BinaryThresholdImageFilter <InternalImageType, OutputImageType>
+    BinaryThresholdImageFilterType;
+ 
   typename ReaderType::Pointer reader = ReaderType::New();  
   typename WriterType::Pointer writer = WriterType::New();
   typename SmoothingFilterType::Pointer smoothing = SmoothingFilterType::New();
 
-  /*
-  typename HessianFilterType::Pointer hessianFilter = HessianFilterType::New();
-  */
   typename LineFilterType::Pointer lineFilter = LineFilterType::New();
-
-  typename OtsuFilterType::Pointer OtsuFilter = OtsuFilterType::New();
   typename CCFilterType::Pointer CCFilter = CCFilterType::New();
   typename RelabelType::Pointer RelabelFilter = RelabelType::New();
   typename NeedleFilterType::Pointer needleFilter = NeedleFilterType::New();
-
 
   reader->SetFileName( inputVolume.c_str() );
   writer->SetFileName( outputVolume.c_str() );
@@ -114,40 +105,29 @@ template<class T> int DoIt( int argc, char * argv[], T )
 
   lineFilter->SetAlpha1( static_cast< double >(alpha1));
   lineFilter->SetAlpha2( static_cast< double >(alpha2));
-  
+
+  // We use only a signle-scale filter.
   MultiScaleEnhancementFilterType::Pointer multiScaleEnhancementFilter = MultiScaleEnhancementFilterType::New();
   multiScaleEnhancementFilter->SetInput(smoothing->GetOutput());
-  multiScaleEnhancementFilter->SetSigmaMinimum(minsigma);
-  multiScaleEnhancementFilter->SetSigmaMaximum(maxsigma);
-  multiScaleEnhancementFilter->SetNumberOfSigmaSteps(stepsigma);
+  multiScaleEnhancementFilter->SetSigmaMinimum(sigma2);
+  multiScaleEnhancementFilter->SetSigmaMaximum(sigma2);
+  multiScaleEnhancementFilter->SetNumberOfSigmaSteps(1);
   multiScaleEnhancementFilter->SetHessianToMeasureFilter (lineFilter);
 
-  //OtsuFilter->SetInput( multiScaleEnhancementFilter->GetOutput());
-  //OtsuFilter->SetOutsideValue( 255 );
-  //OtsuFilter->SetInsideValue(  0  );
-  //OtsuFilter->SetNumberOfHistogramBins( numberOfBins );
-  //CCFilter->SetInput (OtsuFilter->GetOutput());
-  //CCFilter->FullyConnectedOff();
-  //RelabelFilter->SetInput ( CCFilter->GetOutput() );
-  //RelabelFilter->SetMinimumObjectSize( minimumObjectSize );
-  //
-  //needleFilter->SetInput( RelabelFilter->GetOutput() );
-  //needleFilter->SetMinPrincipalAxisLength( static_cast< float >(minPrincipalAxisLength) );
-  //needleFilter->SetAngleThreshold (static_cast< double >(anglethreshold) );
-  //
-  //// Set default orientation and closest point of the needle for detection
-  //// Note that the parameter is passed in RAS coordinate system
-  //// and must be converted to LPS coordinate system
-  //needleFilter->SetNormal (static_cast< double >(-normal[0]),
-  //                         static_cast< double >(-normal[1]),
-  //                         static_cast< double >(normal[2]));
-  //needleFilter->SetClosestPoint(static_cast< double >(-closestPoint[0]),
-  //                              static_cast< double >(-closestPoint[1]),
-  //                              static_cast< double >(closestPoint[2]));
-  //
+  BinaryThresholdImageFilterType::Pointer thresholdFilter = BinaryThresholdImageFilterType::New();
+  thresholdFilter->SetInput(multiScaleEnhancementFilter->GetOutput());
+  thresholdFilter->SetLowerThreshold(lowerThreshold);
+  thresholdFilter->SetUpperThreshold(upperThreshold);
+  thresholdFilter->SetInsideValue(255);
+  thresholdFilter->SetOutsideValue(0);
 
-  //writer->SetInput( needleFilter->GetOutput() );
-  writer->SetInput( multiScaleEnhancementFilter->GetOutput() );
+  CCFilter->SetInput (thresholdFilter->GetOutput());
+  CCFilter->FullyConnectedOff();
+
+  RelabelFilter->SetInput ( CCFilter->GetOutput() );
+  RelabelFilter->SetMinimumObjectSize( minimumObjectSize );
+
+  writer->SetInput( RelabelFilter->GetOutput() );
   writer->SetUseCompression(1);
 
   try
