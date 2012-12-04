@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Program:   Insight Segmentation & Registration Toolkit
-  Module:    $RCSfile: itkHessian3DToNeedleImageFilter.h,v $
+  Module:    $RCSfile: itkHessian3DToLineImageFilter.h,v $
   Language:  C++
   Date:      $Date: 2009-04-25 12:27:26 $
   Version:   $Revision: 1.9 $
@@ -14,27 +14,27 @@
      PURPOSE.  See the above copyright notices for more information.
 
 =========================================================================*/
-#ifndef __itkLabelToNeedleImageFilter_h
-#define __itkLabelToNeedleImageFilter_h
+#ifndef __itkLabelToLineImageFilter_h
+#define __itkLabelToLineImageFilter_h
 
 #include "itkImageToImageFilter.h"
 #include "itkCenteredAffineTransform.h"
 
 namespace itk
 {
-/** \class LabelToNeedleImageFilter
+/** \class LabelToLineImageFilter
  * \brief 
  * \ingroup IntensityImageFilters TensorObjects
  *
  */
   
 template < typename  TInput, typename TOutput  >
-class ITK_EXPORT LabelToNeedleImageFilter : public
+class ITK_EXPORT LabelToLineImageFilter : public
 ImageToImageFilter< TInput, TOutput >
 {
 public:
   /** Standard class typedefs. */
-  typedef LabelToNeedleImageFilter Self;
+  typedef LabelToLineImageFilter Self;
   typedef ImageToImageFilter<
           TInput,
           TOutput >                               Superclass;
@@ -46,27 +46,18 @@ public:
   typedef typename InputImageType::PixelType             InputPixelType;
   typedef typename OutputImageType::PixelType            OutputPixelType;
   
-  typedef typename itk::CenteredAffineTransform< float, 3 >      NeedleTransformType;
+  typedef typename itk::CenteredAffineTransform< float, 3 >      LineTransformType;
 
   typedef itk::Vector< double, 3 > VectorType;
 
-  /** Image dimension = 3. */
-  //itkStaticConstMacro(ImageDimension, unsigned int,
-  //                    ::itk::GetImageDimension<InputImageType>::ImageDimension);
-  //itkStaticConstMacro(InputPixelDimension, unsigned int,
-  //                    InputPixelType::Dimension);
-
   /** Run-time type information (and related methods).   */
-  itkTypeMacro( LabelToNeedleImageFilter, ImageToImageFilter );
+  itkTypeMacro( LabelToLineImageFilter, ImageToImageFilter );
 
   /** Method for creation through the object factory. */
   itkNewMacro(Self);
-  
-  itkSetMacro(MinPrincipalAxisLength, float);
-  itkGetConstMacro(MinPrincipalAxisLength, float);
 
-  itkSetMacro(AngleThreshold, double);
-  itkGetConstMacro(AngleThreshold, double);
+  itkSetMacro(Label, int);
+  itkGetConstMacro(Label, int);
 
   inline void SetNormal(double x, double y, double z)
   {
@@ -78,19 +69,9 @@ public:
     x = m_Normal[0]; y = m_Normal[1]; z = m_Normal[2];
   }
 
-  inline void SetClosestPoint(double x, double y, double z)
+  inline LineTransformType * GetLineTransform()
   {
-    m_ClosestPoint[0] = x; m_ClosestPoint[1] = y; m_ClosestPoint[2] = z;
-  }
-
-  inline void GetClosestPoint(double& x, double& y, double& z)
-  {
-    x = m_ClosestPoint[0]; y = m_ClosestPoint[1]; z = m_ClosestPoint[2];
-  }
-
-  inline NeedleTransformType * GetNeedleTransform()
-  {
-    return m_NeedleTransform;
+    return m_LineTransform;
   }
 
 #ifdef ITK_USE_CONCEPT_CHECKING
@@ -102,30 +83,28 @@ public:
 
 
 protected:
-  LabelToNeedleImageFilter();
-  ~LabelToNeedleImageFilter() {};
+  LabelToLineImageFilter();
+  ~LabelToLineImageFilter() {};
   void PrintSelf(std::ostream& os, Indent indent) const;
   
   /** Generate Data */
   void GenerateData( void );
 
 private:
-  LabelToNeedleImageFilter(const Self&); //purposely not implemented
+  LabelToLineImageFilter(const Self&); //purposely not implemented
   void operator=(const Self&); //purposely not implemented
   
-  float m_MinPrincipalAxisLength;
-  double m_AngleThreshold;
+  int m_Label;
   VectorType m_Normal;
-  VectorType m_ClosestPoint;
 
-  NeedleTransformType::Pointer m_NeedleTransform;
+  LineTransformType::Pointer m_LineTransform;
 
 };
 
 } // end namespace itk
 
 #ifndef ITK_MANUAL_INSTANTIATION
-#include "itkLabelToNeedleImageFilter.txx"
+#include "itkLabelToLineImageFilter.txx"
 #endif
   
 #endif

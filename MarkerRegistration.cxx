@@ -1,3 +1,19 @@
+/*=========================================================================
+
+  Program:   3D Slicer Marker Registration CLI
+  Module:    MarkerRegistration
+  Language:  C++
+  Author:    Junichi Tokuda, Ph.D. (Brigham and Women's Hospital)
+
+  Copyright (c) Brigham and Women's Hospital. All rights reserved.
+  See ITKCopyright.txt or http://www.itk.org/HTML/Copyright.htm for details.
+
+     This software is distributed WITHOUT ANY WARRANTY; without even 
+     the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR 
+     PURPOSE.  See the above copyright notices for more information.
+
+=========================================================================*/
+
 #if defined(_MSC_VER)
 #pragma warning ( disable : 4786 )
 #endif
@@ -9,7 +25,7 @@
 #include "itkHessianRecursiveGaussianImageFilter.h"
 #include "itkSmoothingRecursiveGaussianImageFilter.h"
 #include "itkSymmetricSecondRankTensor.h"
-#include "itkLabelToNeedleImageFilter.h"
+#include "itkLabelToLineImageFilter.h"
 
 #include "itkConnectedComponentImageFilter.h"
 #include "itkRelabelComponentImageFilter.h"
@@ -70,8 +86,8 @@ template<class T> int DoIt( int argc, char * argv[], T )
   typedef   itk::RelabelComponentImageFilter<
     OutputImageType, OutputImageType > RelabelType;
   // Line detection filter
-  typedef   itk::LabelToNeedleImageFilter<
-  OutputImageType, OutputImageType > NeedleFilterType;
+  typedef   itk::LabelToLineImageFilter<
+  OutputImageType, OutputImageType > LabelLineFilterType;
 
   // Declare the type of enhancement filter - use ITK's 3D vesselness (Sato)
   //typedef itk::Hessian3DToVesselnessMeasureImageFilter<double> VesselnessFilterType;
@@ -95,7 +111,7 @@ template<class T> int DoIt( int argc, char * argv[], T )
   typename LineFilterType::Pointer lineFilter = LineFilterType::New();
   typename CCFilterType::Pointer CCFilter = CCFilterType::New();
   typename RelabelType::Pointer RelabelFilter = RelabelType::New();
-  typename NeedleFilterType::Pointer needleFilter = NeedleFilterType::New();
+  typename LabelLineFilterType::Pointer labelLineFilter = LabelLineFilterType::New();
 
   reader->SetFileName( inputVolume.c_str() );
   writer->SetFileName( outputVolume.c_str() );
@@ -140,19 +156,166 @@ template<class T> int DoIt( int argc, char * argv[], T )
     return EXIT_FAILURE ;
     }
 
-  typedef typename NeedleFilterType::NeedleTransformType TransformType;
-  TransformType::Pointer transform = needleFilter->GetNeedleTransform();
+  // Detect lines from the label map
+  labelLineFilter->SetInput( RelabelFilter->GetOutput() );
 
-  if (needleTransform != "")
+  OutputImageType::Pointer dummyImage = OutputImageType::New();
+
+  // Line label 1
+  typedef typename LabelLineFilterType::LineTransformType TransformType;
+  labelLineFilter->SetLabel( 1 );
+  TransformType::Pointer transform0 = labelLineFilter->GetLineTransform();
+  labelLineFilter->Update();
+  if (lineTransform0 != "")
     {
     typedef itk::TransformFileWriter TransformWriterType;
-    TransformWriterType::Pointer needleTransformWriter;
-    needleTransformWriter= TransformWriterType::New();
-    needleTransformWriter->SetFileName( needleTransform );
-    needleTransformWriter->SetInput( transform );
+    TransformWriterType::Pointer lineTransformWriter;
+    lineTransformWriter= TransformWriterType::New();
+    lineTransformWriter->SetFileName( lineTransform0 );
+    lineTransformWriter->SetInput( transform0 );
     try
       {
-      needleTransformWriter->Update();
+      lineTransformWriter->Update();
+      }
+    catch (itk::ExceptionObject &err)
+      {
+      std::cerr << err << std::endl;
+      return EXIT_FAILURE ;
+      }
+    }
+
+
+  // Line label 2
+  typedef typename LabelLineFilterType::LineTransformType TransformType;
+  labelLineFilter->SetLabel( 2 );
+  TransformType::Pointer transform1 = labelLineFilter->GetLineTransform();
+  labelLineFilter->Update();
+  if (lineTransform1 != "")
+    {
+    typedef itk::TransformFileWriter TransformWriterType;
+    TransformWriterType::Pointer lineTransformWriter;
+    lineTransformWriter= TransformWriterType::New();
+    lineTransformWriter->SetFileName( lineTransform1 );
+    lineTransformWriter->SetInput( transform1 );
+    try
+      {
+      lineTransformWriter->Update();
+      }
+    catch (itk::ExceptionObject &err)
+      {
+      std::cerr << err << std::endl;
+      return EXIT_FAILURE ;
+      }
+    }
+
+  // Line label 3
+  typedef typename LabelLineFilterType::LineTransformType TransformType;
+  labelLineFilter->SetLabel( 3 );
+  TransformType::Pointer transform2 = labelLineFilter->GetLineTransform();
+  labelLineFilter->Update();
+  if (lineTransform2 != "")
+    {
+    typedef itk::TransformFileWriter TransformWriterType;
+    TransformWriterType::Pointer lineTransformWriter;
+    lineTransformWriter= TransformWriterType::New();
+    lineTransformWriter->SetFileName( lineTransform2 );
+    lineTransformWriter->SetInput( transform2 );
+    try
+      {
+      lineTransformWriter->Update();
+      }
+    catch (itk::ExceptionObject &err)
+      {
+      std::cerr << err << std::endl;
+      return EXIT_FAILURE ;
+      }
+    }
+
+
+  // Line label 4
+  typedef typename LabelLineFilterType::LineTransformType TransformType;
+  labelLineFilter->SetLabel( 4 );
+  TransformType::Pointer transform3 = labelLineFilter->GetLineTransform();
+  labelLineFilter->Update();
+  if (lineTransform3 != "")
+    {
+    typedef itk::TransformFileWriter TransformWriterType;
+    TransformWriterType::Pointer lineTransformWriter;
+    lineTransformWriter= TransformWriterType::New();
+    lineTransformWriter->SetFileName( lineTransform3 );
+    lineTransformWriter->SetInput( transform3 );
+    try
+      {
+      lineTransformWriter->Update();
+      }
+    catch (itk::ExceptionObject &err)
+      {
+      std::cerr << err << std::endl;
+      return EXIT_FAILURE ;
+      }
+    }
+
+  // Line label 5
+  typedef typename LabelLineFilterType::LineTransformType TransformType;
+  labelLineFilter->SetLabel( 5 );
+  TransformType::Pointer transform4 = labelLineFilter->GetLineTransform();
+  labelLineFilter->Update();
+  if (lineTransform4 != "")
+    {
+    typedef itk::TransformFileWriter TransformWriterType;
+    TransformWriterType::Pointer lineTransformWriter;
+    lineTransformWriter= TransformWriterType::New();
+    lineTransformWriter->SetFileName( lineTransform4 );
+    lineTransformWriter->SetInput( transform4 );
+    try
+      {
+      lineTransformWriter->Update();
+      }
+    catch (itk::ExceptionObject &err)
+      {
+      std::cerr << err << std::endl;
+      return EXIT_FAILURE ;
+      }
+    }
+
+  // Line label 6
+  typedef typename LabelLineFilterType::LineTransformType TransformType;
+  labelLineFilter->SetLabel( 6 );
+  TransformType::Pointer transform5 = labelLineFilter->GetLineTransform();
+  labelLineFilter->Update();
+  if (lineTransform5 != "")
+    {
+    typedef itk::TransformFileWriter TransformWriterType;
+    TransformWriterType::Pointer lineTransformWriter;
+    lineTransformWriter= TransformWriterType::New();
+    lineTransformWriter->SetFileName( lineTransform5 );
+    lineTransformWriter->SetInput( transform5 );
+    try
+      {
+      lineTransformWriter->Update();
+      }
+    catch (itk::ExceptionObject &err)
+      {
+      std::cerr << err << std::endl;
+      return EXIT_FAILURE ;
+      }
+    }
+
+  // Line label 7
+  typedef typename LabelLineFilterType::LineTransformType TransformType;
+  labelLineFilter->SetLabel( 7 );
+  TransformType::Pointer transform6 = labelLineFilter->GetLineTransform();
+  labelLineFilter->Update();
+  if (lineTransform6 != "")
+    {
+    typedef itk::TransformFileWriter TransformWriterType;
+    TransformWriterType::Pointer lineTransformWriter;
+    lineTransformWriter= TransformWriterType::New();
+    lineTransformWriter->SetFileName( lineTransform6 );
+    lineTransformWriter->SetInput( transform6 );
+    try
+      {
+      lineTransformWriter->Update();
       }
     catch (itk::ExceptionObject &err)
       {

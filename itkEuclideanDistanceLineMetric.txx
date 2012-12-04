@@ -106,52 +106,7 @@ EuclideanDistanceLineMetric<TFixedPointSet,TMovingPointSet,TDistanceMap>
       this->m_Transform->TransformPoint( inputVector );
     ++pointItr;
 
-
-    //double minimumDistance = NumericTraits<double>::max();
-    //bool closestPoint = false;
-    //
-    //// Try to use the distance map to solve the closest point
-    //if(m_DistanceMap)
-    //  {
-    //  // If the point is inside the distance map
-    //  typename DistanceMapType::IndexType index;
-    //  if(m_DistanceMap->TransformPhysicalPointToIndex(transformedPoint,index))
-    //    {
-    //    minimumDistance = m_DistanceMap->GetPixel(index);
-    //    // In case the provided distance map was signed, 
-    //    // we correct here the distance to take its absolute value.
-    //    if( minimumDistance < 0.0 ) 
-    //      {
-    //      minimumDistance = -minimumDistance;
-    //      }
-    //    closestPoint = true;
-    //    }
-    //  }
-    //
-    //// if the closestPoint has not been found
-    //if(!closestPoint)
-    //  {
-    //  // Go trough the list of fixed point and find the closest distance
-    //  PointIterator pointItr2 = fixedPointSet->GetPoints()->Begin();
-    //  PointIterator pointEnd2 = fixedPointSet->GetPoints()->End();
-    //
-    //  while( pointItr2 != pointEnd2 )
-    //    {
-    //    double dist = pointItr2.Value().SquaredEuclideanDistanceTo(transformedPoint);
-    //
-    //    if(!m_ComputeSquaredDistance)
-    //      {
-    //      dist = vcl_sqrt(dist);
-    //      }
-    //
-    //    if(dist<minimumDistance)
-    //      {
-    //      minimumDistance = dist;
-    //                }
-    //    pointItr2++;
-    //    }
-    //  }
-
+    double minimunDistance = -1.0; // distance is initialized with value < 0
     bool closestPoint = false;
     if(!closestPoint)
       {
@@ -164,36 +119,70 @@ EuclideanDistanceLineMetric<TFixedPointSet,TMovingPointSet,TDistanceMap>
         point0[i] = transformedPoint->GetElement(i) - transformedVector->GetElement(i)/2.0;
         point1[i] = transformedPoint->GetElement(i) + transformedVector->GetElement(i)/2.0;
         }
-      
+
       // Go trough the list of fixed point and find the closest distance
       PointIterator pointItr2 = fixedPointSet->GetPoints()->Begin();
       PointIterator pointEnd2 = fixedPointSet->GetPoints()->End();
     
       while( pointItr2 != pointEnd2 )
         {
-        double dist = pointItr2.Value().SquaredEuclideanDistanceTo(transformedPoint);
+        typename Superclass::InputPointType  lineBasePoint;
+        lineBasePoint.CastFrom( pointItr2.Value() );
+        ++pointItr2;
+        
+        typename Superclass::InputPointType  lineNormalVector;
+        lineNormalVector.CastFrom( pointItr2.Value() );
+        ++pointItr2;
+        double sqdist0  = PointToLineDistance(point0, lineBasePoint, lineNormalVector);
+        double sqdist1  = PointToLineDistance(point1, lineBasePoint, lineNormalVector);
+        double rms_dist = vcl_sqrt((sqdist0+sqdist1)/2.0);
     
-        if(!m_ComputeSquaredDistance)
+        if (minimumDistance < 0.0 || rms_dist < minimumDistance)
           {
-          dist = vcl_sqrt(dist);
+          minimumDIstance = rms_dist;
           }
-    
-        if(dist<minimumDistance)
-          {
-          minimumDistance = dist;
-                    }
-        pointItr2++;
         }
       }
     measure.put(identifier,minimumDistance);
-
+    
     ++pointItr;
     identifier++;
     }
-
+  
   return measure;
 
 }
+
+
+template <class TFixedPointSet, class TMovingPointSet, class TDistanceMap>
+void
+EuclideanDistanceLineMetric<TFixedPointSet,TMovingPointSet,TDistanceMap>
+::PointToLineDistanceSq( typename InputPointType::PixelType *point,
+                       typename InputPointType::PixelType *lineBasePoint,
+                       typename InputPointType::PixelType *lineNormalVector) 
+{
+  // Calculate the distance between the point ('point') and the line represented
+  // by the combination of the base point ('lineBasePoint') and the normal vector
+  // ('lineNOrmalVector').
+
+  double inner=0.0;
+  for (int i = 0; i < PointDimensions)
+    {
+    inner += point[i]-lineBasePoint[i] * lineNormalVector[i];
+    }
+  
+  double sqdistance=0.0;
+  for (int i = 0; i < PointDimensions)
+    {
+    double elm = inner*lineNormalVector[i] + lineBasePoint[i] - point[i];
+    sqdistance = elm*elm;
+    }
+  //double distance = vcl_sqrt(sqdistance);
+
+  return sqdistance;
+  
+}
+
 
 /** Get the Derivative Measure */
 template <class TFixedPointSet, class TMovingPointSet, class TDistanceMap>

@@ -31,11 +31,53 @@ This work is part of NIH 5R01 CA111288 -- Enabling Technologies for MRI-guided P
       <index>1</index>
       <description>Blurred Volume</description>
     </image>
-    <transform fileExtensions=".txt" reference="NeedlePositionFileName">
-      <name>needleTransform</name>
-      <longflag>needletransform</longflag>
-      <description>Position and orientation of detected needle.</description>
-      <label>Needle transform</label>
+    <transform fileExtensions=".txt" reference="LinePosition0FileName">
+      <name>lineTransform0</name>
+      <longflag>linetransform0</longflag>
+      <description>Position and orientation of detected line.</description>
+      <label>Line transform 0</label>
+      <channel>output</channel>
+    </transform>
+    <transform fileExtensions=".txt" reference="LinePosition1FileName">
+      <name>lineTransform1</name>
+      <longflag>linetransform1</longflag>
+      <description>Position and orientation of detected line.</description>
+      <label>Line transform 1</label>
+      <channel>output</channel>
+    </transform>
+    <transform fileExtensions=".txt" reference="LinePosition2FileName">
+      <name>lineTransform2</name>
+      <longflag>linetransform2</longflag>
+      <description>Position and orientation of detected line.</description>
+      <label>Line transform 2</label>
+      <channel>output</channel>
+    </transform>
+    <transform fileExtensions=".txt" reference="LinePosition3FileName">
+      <name>lineTransform3</name>
+      <longflag>linetransform3</longflag>
+      <description>Position and orientation of detected line.</description>
+      <label>Line transform 3</label>
+      <channel>output</channel>
+    </transform>
+    <transform fileExtensions=".txt" reference="LinePosition4FileName">
+      <name>lineTransform4</name>
+      <longflag>linetransform4</longflag>
+      <description>Position and orientation of detected line.</description>
+      <label>Line transform 4</label>
+      <channel>output</channel>
+    </transform>
+    <transform fileExtensions=".txt" reference="LinePosition5FileName">
+      <name>lineTransform5</name>
+      <longflag>linetransform5</longflag>
+      <description>Position and orientation of detected line.</description>
+      <label>Line transform 5</label>
+      <channel>output</channel>
+    </transform>
+    <transform fileExtensions=".txt" reference="LinePosition6FileName">
+      <name>lineTransform6</name>
+      <longflag>linetransform6</longflag>
+      <description>Position and orientation of detected line.</description>
+      <label>Line transform 6</label>
       <channel>output</channel>
     </transform>
   </parameters>
@@ -59,7 +101,7 @@ This work is part of NIH 5R01 CA111288 -- Enabling Technologies for MRI-guided P
       <longflag>sigma2</longflag>
       <flag>u</flag>
       <label>Sigma</label>
-      <description>Sigma value in physical units (e.g., mm) of the Gaussian kernel for needle thickness</description>
+      <description>Sigma value in physical units (e.g., mm) of the Gaussian kernel for line thickness</description>
       <default>3.0</default>
     </double>
     <double>
@@ -108,13 +150,13 @@ This work is part of NIH 5R01 CA111288 -- Enabling Technologies for MRI-guided P
     </integer>
   </parameters>
   <parameters>
-    <label>Needle Identification Parameters</label>
-    <description>Parameters for Needle Identification using PCA</description>
+    <label>Line Identification Parameters</label>
+    <description>Parameters for Line Identification using PCA</description>
     <float>
       <name>minPrincipalAxisLength</name>
       <longflag>--minPrincipalAxisLength</longflag>
       <description>
-	Minimum length of the principal axis of the needle artifact.
+	Minimum length of the principal axis of the line artifact.
       </description>
       <label>Min. Principal Axis Length</label>
       <default>50.0</default>
