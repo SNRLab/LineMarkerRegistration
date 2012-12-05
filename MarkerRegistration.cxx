@@ -185,19 +185,25 @@ template<class T> int DoIt( int argc, char * argv[], T )
   MovingPointSetType::Pointer movingPointSet = MovingPointSetType::New();
   MovingPointSetContainer::Pointer movingPointSetContainer = MovingPointSetContainer::New();
   //unsigned int pointId = 0;
-  for (int i= 1; i <= nObjects; i ++) // Label 0 is background and skipped
+  for (int i= 0; i < nObjects; i ++) // Label 0 is background and skipped
     {
+    // According to ITK's manual:
+    // "Once all the objects are relabeled, the application can query the number of objects and
+    //  the size of each object. Object sizes are returned in a vector. The size of the background
+    //  is not calculated. So the size of object #1 is GetSizeOfObjectsInPixels()[0], the size of object
+    //  #2 is GetSizeOfObjectsInPixels()[1], etc."
     float size = objectSize[i];
+    int label = i + 1;
     if (size < minimumObjectSize || size > maximumObjectSize)
       {
       // Out of size criteria
-      changeMap[i] = 0;
+      changeMap[label] = 0;
       }
     else
       {
       MovingPointType point;
       MovingPointType norm;
-      labelLineFilter->SetLabel( i );
+      labelLineFilter->SetLabel( label );
       labelLineFilter->Update();
       TransformType::Pointer transform = labelLineFilter->GetLineTransform();
       TransformType::MatrixType matrix = transform->GetMatrix();
@@ -209,7 +215,7 @@ template<class T> int DoIt( int argc, char * argv[], T )
       norm[2]  = matrix[2][0];
       norm[3]  = matrix[2][0];
       std::cerr << "Detected line #"
-                << i
+                << label
                 << ": Point=("
                 << point[0] << ", "
                 << point[1] << ", "

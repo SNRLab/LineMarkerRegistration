@@ -103,15 +103,22 @@ This work is part of NIH 5R01 CA111288 -- Enabling Technologies for MRI-guided P
       <name>minimumObjectSize</name>
       <longflag>--minimumObjectSize</longflag>
       <description>Minimum size of object to retain (mm^2). This parameter can be used to get rid of small regions in noisy images.</description>
-      <label>Minimum Object Size</label>
-      <default>1100</default>
+      <label>Minimum Object Size (mm^2)</label>
+      <default>1150</default>
     </float>
     <float>
       <name>maximumObjectSize</name>
       <longflag>--maximumObjectSize</longflag>
       <description>Maximum size of object to retain (mm^2). This parameter can be used to get rid of small regions in noisy images.</description>
-      <label>Maximum Object Size</label>
+      <label>Maximum Object Size (mm^2)</label>
       <default>1500</default>
+    </float>
+    <float>
+      <name>maximumMinorAxis</name>
+      <longflag>--maximumMinorAxis</longflag>
+      <description>Maximum length of minor axis of the reagion (mm^2). This parameter can be used to get rid of shapes that does not look like a straight line.</description>
+      <label>Maximum Minor Axis Length (pixel)</label>
+      <default>10</default>
     </float>
   </parameters>
   <parameters>

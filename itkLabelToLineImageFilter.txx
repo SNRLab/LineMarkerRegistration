@@ -135,7 +135,13 @@ LabelToLineImageFilter< TInput, TOutput >
   std::cout << "EigenValues: " << eigenValues << std::endl;
   std::cout << "EigenVectors (each row is an an eigen vector): " << std::endl;
   std::cout << eigenMatrix << std::endl;
-  
+
+  // Set axis length to reference from external routine
+  // Note that the first element of m_AxisLength[] is the principal axis.
+  m_AxisLength[0] = eigenValues[2];
+  m_AxisLength[1] = eigenValues[1];
+  m_AxisLength[2] = eigenValues[0];
+
   // Check the direction of principal component
   VectorType principalVector = eigenMatrix[2];
   double ip = principalVector * m_Normal;

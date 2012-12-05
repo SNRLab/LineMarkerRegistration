@@ -59,6 +59,14 @@ public:
   itkSetMacro(Label, int);
   itkGetConstMacro(Label, int);
 
+  // Returns axis length. axisLength[0] is the principal axis (along the line)
+  inline void GetAxisLength(VectorType& axisLength)
+  {
+    axisLength[0] = m_AxisLength[0];
+    axisLength[1] = m_AxisLength[1];
+    axisLength[2] = m_AxisLength[2];
+  }
+
   inline void SetNormal(double x, double y, double z)
   {
     m_Normal[0] = x; m_Normal[1] = y; m_Normal[2] = z;
@@ -96,6 +104,7 @@ private:
   
   int m_Label;
   VectorType m_Normal;
+  VectorType m_AxisLength;
 
   LineTransformType::Pointer m_LineTransform;
 
