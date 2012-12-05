@@ -101,6 +101,10 @@ public:
   /** Get the number of values */
   unsigned int GetNumberOfValues() const;
 
+  double PointToLineDistanceSq( const typename Superclass::InputPointType& point,
+                                const typename Superclass::InputPointType& lineBasePoint,
+                                const typename Superclass::InputPointType& lineNormalVector) const;
+
   /** Get the derivatives of the match measure. */
   void GetDerivative( const TransformParametersType & parameters,
                       DerivativeType & Derivative ) const;

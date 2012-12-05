@@ -31,53 +31,11 @@ This work is part of NIH 5R01 CA111288 -- Enabling Technologies for MRI-guided P
       <index>1</index>
       <description>Blurred Volume</description>
     </image>
-    <transform fileExtensions=".txt" reference="LinePosition0FileName">
-      <name>lineTransform0</name>
-      <longflag>linetransform0</longflag>
+    <transform fileExtensions=".txt" reference="LinePositionFileName">
+      <name>lineTransform</name>
+      <longflag>linetransform</longflag>
       <description>Position and orientation of detected line.</description>
-      <label>Line transform 0</label>
-      <channel>output</channel>
-    </transform>
-    <transform fileExtensions=".txt" reference="LinePosition1FileName">
-      <name>lineTransform1</name>
-      <longflag>linetransform1</longflag>
-      <description>Position and orientation of detected line.</description>
-      <label>Line transform 1</label>
-      <channel>output</channel>
-    </transform>
-    <transform fileExtensions=".txt" reference="LinePosition2FileName">
-      <name>lineTransform2</name>
-      <longflag>linetransform2</longflag>
-      <description>Position and orientation of detected line.</description>
-      <label>Line transform 2</label>
-      <channel>output</channel>
-    </transform>
-    <transform fileExtensions=".txt" reference="LinePosition3FileName">
-      <name>lineTransform3</name>
-      <longflag>linetransform3</longflag>
-      <description>Position and orientation of detected line.</description>
-      <label>Line transform 3</label>
-      <channel>output</channel>
-    </transform>
-    <transform fileExtensions=".txt" reference="LinePosition4FileName">
-      <name>lineTransform4</name>
-      <longflag>linetransform4</longflag>
-      <description>Position and orientation of detected line.</description>
-      <label>Line transform 4</label>
-      <channel>output</channel>
-    </transform>
-    <transform fileExtensions=".txt" reference="LinePosition5FileName">
-      <name>lineTransform5</name>
-      <longflag>linetransform5</longflag>
-      <description>Position and orientation of detected line.</description>
-      <label>Line transform 5</label>
-      <channel>output</channel>
-    </transform>
-    <transform fileExtensions=".txt" reference="LinePosition6FileName">
-      <name>lineTransform6</name>
-      <longflag>linetransform6</longflag>
-      <description>Position and orientation of detected line.</description>
-      <label>Line transform 6</label>
+      <label>Line transform</label>
       <channel>output</channel>
     </transform>
   </parameters>
@@ -139,15 +97,22 @@ This work is part of NIH 5R01 CA111288 -- Enabling Technologies for MRI-guided P
   </parameters>
 
   <parameters>
-    <label>Otsu Threshold Parameters</label>
+    <label>Threshold Parameters</label>
     <description>Parameters for Otsu Thresholding</description>
-    <integer>
+    <float>
       <name>minimumObjectSize</name>
       <longflag>--minimumObjectSize</longflag>
       <description>Minimum size of object to retain. This parameter can be used to get rid of small regions in noisy images.</description>
       <label>Minimum Object Size</label>
-      <default>500</default>
-    </integer>
+      <default>100</default>
+    </float>
+    <float>
+      <name>maximumObjectSize</name>
+      <longflag>--maximumObjectSize</longflag>
+      <description>Maximum size of object to retain. This parameter can be used to get rid of small regions in noisy images.</description>
+      <label>Maximum Object Size</label>
+      <default>200</default>
+    </float>
   </parameters>
   <parameters>
     <label>Line Identification Parameters</label>

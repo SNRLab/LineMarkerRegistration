@@ -106,14 +106,14 @@ EuclideanDistanceLineMetric<TFixedPointSet,TMovingPointSet,TDistanceMap>
       this->m_Transform->TransformPoint( inputVector );
     ++pointItr;
 
-    double minimunDistance = -1.0; // distance is initialized with value < 0
+    double minimumDistance = -1.0; // distance is initialized with value < 0
     bool closestPoint = false;
     if(!closestPoint)
       {
       // Find 2 points on the moving line sets
-      typename Superclass::InputPointType::PixelType point0[PointDimensions];
-      typename Superclass::InputPointType::PixelType point1[PointDimensions];
-      for (int i = 0; i < PointDimensions)
+      typename Superclass::InputPointType point0;
+      typename Superclass::InputPointType point1;
+      for (int i = 0; i < 3; i ++)
         {
         // Assuming the length of the normal vector is 1
         point0[i] = transformedPoint->GetElement(i) - transformedVector->GetElement(i)/2.0;
@@ -133,13 +133,13 @@ EuclideanDistanceLineMetric<TFixedPointSet,TMovingPointSet,TDistanceMap>
         typename Superclass::InputPointType  lineNormalVector;
         lineNormalVector.CastFrom( pointItr2.Value() );
         ++pointItr2;
-        double sqdist0  = PointToLineDistance(point0, lineBasePoint, lineNormalVector);
-        double sqdist1  = PointToLineDistance(point1, lineBasePoint, lineNormalVector);
+        double sqdist0  = PointToLineDistanceSq(point0, lineBasePoint, lineNormalVector);
+        double sqdist1  = PointToLineDistanceSq(point1, lineBasePoint, lineNormalVector);
         double rms_dist = vcl_sqrt((sqdist0+sqdist1)/2.0);
     
         if (minimumDistance < 0.0 || rms_dist < minimumDistance)
           {
-          minimumDIstance = rms_dist;
+          minimumDistance = rms_dist;
           }
         }
       }
@@ -155,24 +155,24 @@ EuclideanDistanceLineMetric<TFixedPointSet,TMovingPointSet,TDistanceMap>
 
 
 template <class TFixedPointSet, class TMovingPointSet, class TDistanceMap>
-void
+double
 EuclideanDistanceLineMetric<TFixedPointSet,TMovingPointSet,TDistanceMap>
-::PointToLineDistanceSq( typename InputPointType::PixelType *point,
-                       typename InputPointType::PixelType *lineBasePoint,
-                       typename InputPointType::PixelType *lineNormalVector) 
+::PointToLineDistanceSq( const typename Superclass::InputPointType& point,
+                         const typename Superclass::InputPointType& lineBasePoint,
+                         const typename Superclass::InputPointType& lineNormalVector) const
 {
   // Calculate the distance between the point ('point') and the line represented
   // by the combination of the base point ('lineBasePoint') and the normal vector
   // ('lineNOrmalVector').
 
   double inner=0.0;
-  for (int i = 0; i < PointDimensions)
+  for (int i = 0; i < 3; i ++)
     {
     inner += point[i]-lineBasePoint[i] * lineNormalVector[i];
     }
   
   double sqdistance=0.0;
-  for (int i = 0; i < PointDimensions)
+  for (int i = 0; i < 3; i ++)
     {
     double elm = inner*lineNormalVector[i] + lineBasePoint[i] - point[i];
     sqdistance = elm*elm;
