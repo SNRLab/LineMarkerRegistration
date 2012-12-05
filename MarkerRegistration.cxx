@@ -35,7 +35,7 @@
 #include "itkMultiScaleHessianBasedMeasureImageFilter.h"
 #include "itkRescaleIntensityImageFilter.h"
 #include "itkEuclideanDistanceLineMetric.h"
-
+#include "itkChangeLabelImageFilter.h"
 
 #include "itkImage.h"
 #include "itkImageFileReader.h"
@@ -151,26 +151,13 @@ template<class T> int DoIt( int argc, char * argv[], T )
     return EXIT_FAILURE ;
     }
 
-
   RelabelFilter->SetInput ( CCFilter->GetOutput() );
 
   // Calculate minimum number of voxels in each object
   OutputImageType::SpacingType spacing = CCFilter->GetOutput()->GetSpacing();
   int min = (int) (minimumObjectSize/(spacing[0]*spacing[1]*spacing[2]));
   RelabelFilter->SetMinimumObjectSize( min );
-
-  writer->SetInput( RelabelFilter->GetOutput() );
-  writer->SetUseCompression(1);
-
-  try
-    {
-    writer->Update();
-    }
-  catch (itk::ExceptionObject &err)
-    {
-    std::cerr << err << std::endl;
-    return EXIT_FAILURE ;
-    }
+  RelabelFilter->Update();
 
   // Detect lines from the label map
   typedef itk::PointSet< float, 3 >   PointSetType;
@@ -188,13 +175,25 @@ template<class T> int DoIt( int argc, char * argv[], T )
   PhysicalSizeContainerType objectSize = RelabelFilter->GetSizeOfObjectsInPhysicalUnits();
   int nObjects = RelabelFilter->GetNumberOfObjects();
 
+  // Setup a map for change label filter
+  typedef itk::ChangeLabelImageFilter<OutputImageType, OutputImageType> ChangeLabelFilter;
+  typedef typename ChangeLabelFilter::ChangeMapType ChangeMapType;
+  //typename std::map< ChangeLabelFilter::InputPixelType, ChangeLabelFilter::OutputPixelType >  ChangeMapType;
+
+  ChangeMapType changeMap;
+
   MovingPointSetType::Pointer movingPointSet = MovingPointSetType::New();
   MovingPointSetContainer::Pointer movingPointSetContainer = MovingPointSetContainer::New();
-  unsigned int pointId = 0;
+  //unsigned int pointId = 0;
   for (int i= 1; i <= nObjects; i ++) // Label 0 is background and skipped
     {
     float size = objectSize[i];
-    if (size >= minimumObjectSize && size <= maximumObjectSize)
+    if (size < minimumObjectSize || size > maximumObjectSize)
+      {
+      // Out of size criteria
+      changeMap[i] = 0;
+      }
+    else
       {
       MovingPointType point;
       MovingPointType norm;
@@ -222,6 +221,22 @@ template<class T> int DoIt( int argc, char * argv[], T )
       }
     }
   
+  ChangeLabelFilter::Pointer changeLabel = ChangeLabelFilter::New();
+  changeLabel->SetInput( RelabelFilter->GetOutput() );
+  changeLabel->SetChangeMap( changeMap );
+  writer->SetInput( changeLabel->GetOutput() );
+  writer->SetUseCompression(1);
+
+  try
+    {
+    writer->Update();
+    }
+  catch (itk::ExceptionObject &err)
+    {
+    std::cerr << err << std::endl;
+    return EXIT_FAILURE ;
+    }
+
   return EXIT_SUCCESS;
 }
 
