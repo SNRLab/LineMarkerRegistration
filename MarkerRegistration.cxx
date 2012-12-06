@@ -167,6 +167,11 @@ template<class T> int DoIt( int argc, char * argv[], T )
   typedef typename LineDistanceMetric::MovingPointSetType MovingPointSetType;
   typedef typename MovingPointSetType::PointsContainer MovingPointSetContainer;
   typedef typename MovingPointSetType::PointType MovingPointType;
+
+  typedef typename LineDistanceMetric::FixedPointSetType FixedPointSetType;
+  typedef typename FixedPointSetType::PointsContainer FixedPointSetContainer;
+  typedef typename FixedPointSetType::PointType FixedPointType;
+
   MovingPointSetContainer::Pointer movingPointContainer = MovingPointSetContainer::New();
 
   labelLineFilter->SetInput( RelabelFilter->GetOutput() );
@@ -182,9 +187,9 @@ template<class T> int DoIt( int argc, char * argv[], T )
 
   ChangeMapType changeMap;
 
-  MovingPointSetType::Pointer movingPointSet = MovingPointSetType::New();
-  MovingPointSetContainer::Pointer movingPointSetContainer = MovingPointSetContainer::New();
-  //unsigned int pointId = 0;
+  FixedPointSetType::Pointer fixedPointSet = FixedPointSetType::New();
+  FixedPointSetContainer::Pointer fixedPointSetContainer = FixedPointSetContainer::New();
+  unsigned int pointId = 0;
   for (int i= 0; i < nObjects; i ++) // Label 0 is background and skipped
     {
     // According to ITK's manual:
@@ -201,8 +206,10 @@ template<class T> int DoIt( int argc, char * argv[], T )
       }
     else
       {
-      MovingPointType point;
-      MovingPointType norm;
+      // TODO: It is probably a good idea to also check the length and thickness of
+      // the segmented area using LabelToLineImageFilter::GetAxisLength().
+      FixedPointType point;
+      FixedPointType norm;
       labelLineFilter->SetLabel( label );
       labelLineFilter->Update();
       TransformType::Pointer transform = labelLineFilter->GetLineTransform();
@@ -224,9 +231,63 @@ template<class T> int DoIt( int argc, char * argv[], T )
                 << norm[1] << ", "
                 << norm[2] << ")"
                 << std::endl;
+      fixedPointSetContainer->InsertElement(pointId, point);
+      pointId ++;
+      fixedPointSetContainer->InsertElement(pointId, norm);
+      pointId ++;
       }
     }
-  
+
+  fixedPointSet->SetPoints( fixedPointSetContainer );
+
+  //
+  // Create pointset of the Z-frame
+  // TODO: this has to be configurable (e.g. XML)
+  //
+  MovingPointSetType::Pointer movingPointSet = MovingPointSetType::New();
+  MovingPointSetContainer::Pointer movingPointSetContainer = MovingPointSetContainer::New();
+
+  // int directions
+  double R=1.0; double L=-1.0;
+  double A=1.0; double P=-1.0;
+  double S=1.0; double I=-1.0;
+
+  FixedPointType point0;
+  FixedPointType norm0;
+  point0[0] = L*30.0; point0[1] = P*30.0; point0[2] = S*0.0;
+  norm0[0] = 0.0; norm0[1] = 0.0; norm0[2] = S*1.0;
+
+  FixedPointType point1;
+  FixedPointType norm1;
+  point1[0] = L*30.0; point1[1] = P*0.0; point1[2] = S*0.0;
+  norm1[0] = 0.0; norm1[1] = A/sqrt(2.0); norm1[2] = S/sqrt(2.0);
+
+  FixedPointType point2;
+  FixedPointType norm2;
+  point2[0] = L*30.0; point2[1] = A*30.0; point2[2] = S*0.0;
+  norm2[0] = 0.0; norm2[1] = 0.0; norm2[2] = S*1.0;
+
+  FixedPointType point3;
+  FixedPointType norm3;
+  point3[0] = L*0.0; point3[1] = A*30.0; point3[2] = S*0.0;
+  norm3[0] = R/sqrt(2.0); norm3[1] = 0.0; norm3[2] = S/sqrt(2.0);
+
+  FixedPointType point4;
+  FixedPointType norm4;
+  point4[0] = R*30.0; point4[1] = A*30.0; point4[2] = S*0.0;
+  norm4[0] = 0.0; norm4[1] = 0.0; norm4[2] = S*1.0;
+
+  FixedPointType point5;
+  FixedPointType norm5;
+  point5[0] = R*30.0; point5[1] = A*0.0; point5[2] = S*0.0;
+  norm5[0] = 0.0; norm5[1] = P/2.0; norm5[2] = S/2.0;
+
+  FixedPointType point6;
+  FixedPointType norm6;
+  point6[0] = R*30.0; point6[1] = P*30.0; point6[2] = S*0.0;
+  norm6[0] = 0.0; norm6[1] = 0.0; norm6[2] = S;
+
+
   ChangeLabelFilter::Pointer changeLabel = ChangeLabelFilter::New();
   changeLabel->SetInput( RelabelFilter->GetOutput() );
   changeLabel->SetChangeMap( changeMap );
