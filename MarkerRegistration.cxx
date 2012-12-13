@@ -43,6 +43,11 @@
 #include "itkCastImageFilter.h"
 #include "itkBinaryThresholdImageFilter.h"
 
+#include "itkEuler3DTransform.h"
+#include "itkRigid3DTransform.h"
+#include "itkTranslationTransform.h"
+#include "itkLevenbergMarquardtOptimizer.h"
+#include "itkPointSetToPointSetRegistrationMethod.h"
 
 #include "itkPluginUtilities.h"
 #include "MarkerRegistrationCLP.h"
@@ -53,6 +58,46 @@
 // entry point, e.g. main()
 //
 namespace {
+
+class CommandIterationUpdate : public itk::Command 
+{
+public:
+  typedef  CommandIterationUpdate   Self;
+  typedef  itk::Command             Superclass;
+  typedef itk::SmartPointer<Self>   Pointer;
+  itkNewMacro( Self );
+
+protected:
+  CommandIterationUpdate() {};
+
+public:
+
+  typedef itk::LevenbergMarquardtOptimizer     OptimizerType;
+  typedef const OptimizerType *                OptimizerPointer;
+
+  void Execute(itk::Object *caller, const itk::EventObject & event)
+    {
+    Execute( (const itk::Object *)caller, event);
+    }
+
+  void Execute(const itk::Object * object, const itk::EventObject & event)
+    {
+    OptimizerPointer optimizer = 
+                         dynamic_cast< OptimizerPointer >( object );
+
+    if( ! itk::IterationEvent().CheckEvent( &event ) )
+      {
+      return;
+      }
+
+    std::cout << "Value = " << optimizer->GetCachedValue() << std::endl; 
+    std::cout << "Position = "  << optimizer->GetCachedCurrentPosition();
+    std::cout << std::endl << std::endl;
+
+    }
+   
+};
+
 
 template<class T> int DoIt( int argc, char * argv[], T )
 {
@@ -218,9 +263,9 @@ template<class T> int DoIt( int argc, char * argv[], T )
       point[0] = trans[0];
       point[1] = trans[1];
       point[2] = trans[2];
-      norm[1]  = matrix[2][0];
-      norm[2]  = matrix[2][0];
-      norm[3]  = matrix[2][0];
+      norm[0]  = matrix[2][0];
+      norm[1]  = matrix[2][1];
+      norm[2]  = matrix[2][2];
       std::cerr << "Detected line #"
                 << label
                 << ": Point=("
@@ -240,54 +285,8 @@ template<class T> int DoIt( int argc, char * argv[], T )
 
   fixedPointSet->SetPoints( fixedPointSetContainer );
 
-  //
-  // Create pointset of the Z-frame
-  // TODO: this has to be configurable (e.g. XML)
-  //
-  MovingPointSetType::Pointer movingPointSet = MovingPointSetType::New();
-  MovingPointSetContainer::Pointer movingPointSetContainer = MovingPointSetContainer::New();
-
-  // int directions
-  double R=1.0; double L=-1.0;
-  double A=1.0; double P=-1.0;
-  double S=1.0; double I=-1.0;
-
-  FixedPointType point0;
-  FixedPointType norm0;
-  point0[0] = L*30.0; point0[1] = P*30.0; point0[2] = S*0.0;
-  norm0[0] = 0.0; norm0[1] = 0.0; norm0[2] = S*1.0;
-
-  FixedPointType point1;
-  FixedPointType norm1;
-  point1[0] = L*30.0; point1[1] = P*0.0; point1[2] = S*0.0;
-  norm1[0] = 0.0; norm1[1] = A/sqrt(2.0); norm1[2] = S/sqrt(2.0);
-
-  FixedPointType point2;
-  FixedPointType norm2;
-  point2[0] = L*30.0; point2[1] = A*30.0; point2[2] = S*0.0;
-  norm2[0] = 0.0; norm2[1] = 0.0; norm2[2] = S*1.0;
-
-  FixedPointType point3;
-  FixedPointType norm3;
-  point3[0] = L*0.0; point3[1] = A*30.0; point3[2] = S*0.0;
-  norm3[0] = R/sqrt(2.0); norm3[1] = 0.0; norm3[2] = S/sqrt(2.0);
-
-  FixedPointType point4;
-  FixedPointType norm4;
-  point4[0] = R*30.0; point4[1] = A*30.0; point4[2] = S*0.0;
-  norm4[0] = 0.0; norm4[1] = 0.0; norm4[2] = S*1.0;
-
-  FixedPointType point5;
-  FixedPointType norm5;
-  point5[0] = R*30.0; point5[1] = A*0.0; point5[2] = S*0.0;
-  norm5[0] = 0.0; norm5[1] = P/2.0; norm5[2] = S/2.0;
-
-  FixedPointType point6;
-  FixedPointType norm6;
-  point6[0] = R*30.0; point6[1] = P*30.0; point6[2] = S*0.0;
-  norm6[0] = 0.0; norm6[1] = 0.0; norm6[2] = S;
-
-
+  // Generate a label map that only contains the identified marker
+  // regions
   ChangeLabelFilter::Pointer changeLabel = ChangeLabelFilter::New();
   changeLabel->SetInput( RelabelFilter->GetOutput() );
   changeLabel->SetChangeMap( changeMap );
@@ -303,6 +302,173 @@ template<class T> int DoIt( int argc, char * argv[], T )
     std::cerr << err << std::endl;
     return EXIT_FAILURE ;
     }
+
+
+  //
+  // Create pointset of the Z-frame
+  // TODO: this has to be configurable (e.g. XML)
+  //
+  MovingPointSetType::Pointer movingPointSet = MovingPointSetType::New();
+  MovingPointSetContainer::Pointer movingPointSetContainer = MovingPointSetContainer::New();
+
+  // int directions
+  double R=-1.0; double L=1.0;
+  double A=-1.0; double P=1.0;
+  double S=1.0; double I=-1.0;
+  pointId = 0;
+
+  MovingPointType point0;
+  MovingPointType norm0;
+  point0[0] = L*30.0; point0[1] = P*30.0; point0[2] = S*0.0;
+  norm0[0] = 0.0; norm0[1] = 0.0; norm0[2] = S*1.0;
+  movingPointSetContainer->InsertElement(pointId, point0);
+  pointId++;
+  movingPointSetContainer->InsertElement(pointId, norm0);
+  pointId++;
+
+  MovingPointType point1;
+  MovingPointType norm1;
+  point1[0] = L*30.0; point1[1] = P*0.0; point1[2] = S*0.0;
+  norm1[0] = 0.0; norm1[1] = A/sqrt(2.0); norm1[2] = S/sqrt(2.0);
+  movingPointSetContainer->InsertElement(pointId, point1);
+  pointId++;
+  movingPointSetContainer->InsertElement(pointId, norm1);
+  pointId++;
+
+  MovingPointType point2;
+  MovingPointType norm2;
+  point2[0] = L*30.0; point2[1] = A*30.0; point2[2] = S*0.0;
+  norm2[0] = 0.0; norm2[1] = 0.0; norm2[2] = S*1.0;
+  movingPointSetContainer->InsertElement(pointId, point2);
+  pointId++;
+  movingPointSetContainer->InsertElement(pointId, norm2);
+  pointId++;
+
+  MovingPointType point3;
+  MovingPointType norm3;
+  point3[0] = L*0.0; point3[1] = A*30.0; point3[2] = S*0.0;
+  norm3[0] = R/sqrt(2.0); norm3[1] = 0.0; norm3[2] = S/sqrt(2.0);
+  movingPointSetContainer->InsertElement(pointId, point3);
+  pointId++;
+  movingPointSetContainer->InsertElement(pointId, norm3);
+  pointId++;
+
+  MovingPointType point4;
+  MovingPointType norm4;
+  point4[0] = R*30.0; point4[1] = A*30.0; point4[2] = S*0.0;
+  norm4[0] = 0.0; norm4[1] = 0.0; norm4[2] = S*1.0;
+  movingPointSetContainer->InsertElement(pointId, point4);
+  pointId++;
+  movingPointSetContainer->InsertElement(pointId, norm4);
+  pointId++;
+
+  MovingPointType point5;
+  MovingPointType norm5;
+  point5[0] = R*30.0; point5[1] = A*0.0; point5[2] = S*0.0;
+  norm5[0] = 0.0; norm5[1] = P/2.0; norm5[2] = S/2.0;
+  movingPointSetContainer->InsertElement(pointId, point5);
+  pointId++;
+  movingPointSetContainer->InsertElement(pointId, norm5);
+  pointId++;
+
+  MovingPointType point6;
+  MovingPointType norm6;
+  point6[0] = R*30.0; point6[1] = P*30.0; point6[2] = S*0.0;
+  norm6[0] = 0.0; norm6[1] = 0.0; norm6[2] = S;
+  movingPointSetContainer->InsertElement(pointId, point6);
+  pointId++;
+  movingPointSetContainer->InsertElement(pointId, norm6);
+  pointId++;
+
+  movingPointSet->SetPoints( movingPointSetContainer );
+
+  //typedef itk::EuclideanDistanceLineMetric<PointSetType, PointSetType> LineDistanceMetric;
+  typedef LineDistanceMetric::TransformType          TransformBaseType;
+  typedef TransformBaseType::ParametersType         ParametersType;
+  typedef TransformBaseType::JacobianType           JacobianType;
+
+  LineDistanceMetric::Pointer metric = LineDistanceMetric::New();
+  //typedef itk::Rigid3DTransform < double >   RegistrationTransformType;
+  typedef itk::TranslationTransform< double, Dimension >      RegistrationTransformType;
+  //typedef itk::Euler3DTransform< double >      RegistrationTransformType;
+  RegistrationTransformType::Pointer registrationTransform = RegistrationTransformType::New();
+
+  // Optimizer Type
+  typedef itk::LevenbergMarquardtOptimizer OptimizerType;
+  OptimizerType::Pointer      optimizer     = OptimizerType::New();
+  optimizer->SetUseCostFunctionGradient(false);
+
+
+  // Registration Method
+  typedef itk::PointSetToPointSetRegistrationMethod< PointSetType, PointSetType > RegistrationType;
+  RegistrationType::Pointer   registration  = RegistrationType::New();
+  //registration->SetNumberOfThreads(1);
+  
+  // Scale the translation components of the Transform in the Optimizer
+  OptimizerType::ScalesType scales( registrationTransform->GetNumberOfParameters() );
+  scales.Fill( 0.01 );
+  //scales.Fill( 1.0 );
+
+  //unsigned long   numberOfIterations =  1000;
+  //double          gradientTolerance  =  1e-5;    // convergence criterion
+  //double          valueTolerance     =  1e-5;    // convergence criterion
+  //double          epsilonFunction    =  1e-6;   // convergence criterion
+
+  //const double translationScale = 10000.0;   // dynamic range of translations
+  //const double rotationScale    =    1.0;   // dynamic range of rotations
+  //
+  //scales[0] = 1.0 / rotationScale;
+  //scales[1] = 1.0 / rotationScale;
+  //scales[2] = 1.0 / rotationScale;
+  //scales[3] = 1.0 / translationScale; 
+  //scales[4] = 1.0 / translationScale; 
+  //scales[5] = 1.0 / translationScale;
+
+  unsigned long   numberOfIterations =  5000;
+  double          gradientTolerance  =  1e-4;   // convergence criterion
+  double          valueTolerance     =  1e-4;   // convergence criterion
+  double          epsilonFunction    =  1e-5;   // convergence criterion
+
+  optimizer->SetScales( scales );
+  optimizer->SetNumberOfIterations( numberOfIterations );
+  optimizer->SetValueTolerance( valueTolerance );
+  optimizer->SetGradientTolerance( gradientTolerance );
+  optimizer->SetEpsilonFunction( epsilonFunction );
+
+
+  // Start from an Identity transform (in a normal case, the user 
+  // can probably provide a better guess than the identity...
+  registrationTransform->SetIdentity();
+  RegistrationTransformType::OutputVectorType vec;
+  vec[0] = 0.0; vec[1] = 0.0; vec[2] = 0.0;
+  registrationTransform->SetOffset(vec);
+
+  registration->SetInitialTransformParameters( registrationTransform->GetParameters() );
+
+  //------------------------------------------------------
+  // Connect all the components required for Registration
+  //------------------------------------------------------
+  registration->SetMetric(        metric        );
+  registration->SetOptimizer(     optimizer     );
+  registration->SetTransform(     registrationTransform     );
+  registration->SetFixedPointSet( fixedPointSet );
+  registration->SetMovingPointSet(   movingPointSet   );
+
+  //Connect an observer
+  CommandIterationUpdate::Pointer observer = CommandIterationUpdate::New();
+  optimizer->AddObserver( itk::IterationEvent(), observer );
+
+  try 
+    {
+    registration->StartRegistration();
+    }
+  catch( itk::ExceptionObject & e )
+    {
+    std::cout << e << std::endl;
+    return EXIT_FAILURE;
+    }
+
+  std::cout << "Solution = " << registrationTransform->GetParameters() << std::endl;
 
   return EXIT_SUCCESS;
 }

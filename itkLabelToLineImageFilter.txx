@@ -103,7 +103,7 @@ LabelToLineImageFilter< TInput, TOutput >
 
   InputPixelType pix = this->m_Label;
   PointListType::Pointer sample = plist; 
-  std::cout << "=== Label " << pix << "===" << std::endl;
+  //std::cout << "=== Label " << pix << "===" << std::endl;
   
   typedef itk::Statistics::CovarianceSampleFilter< PointListType > 
     CovarianceAlgorithmType;
@@ -113,12 +113,12 @@ LabelToLineImageFilter< TInput, TOutput >
   covarianceAlgorithm->SetInput( sample );
   covarianceAlgorithm->Update();
   
-  std::cout << "Sample covariance = " << std::endl ; 
-  std::cout << covarianceAlgorithm->GetCovarianceMatrix() << std::endl;
+  //std::cout << "Sample covariance = " << std::endl ; 
+  //std::cout << covarianceAlgorithm->GetCovarianceMatrix() << std::endl;
   
   CovarianceAlgorithmType::MeasurementVectorType meanVector;
   meanVector = covarianceAlgorithm->GetMean();
-  std::cout << "Sample mean = " << meanVector << std::endl ; 
+  //std::cout << "Sample mean = " << meanVector << std::endl ; 
   
   // Perform Symmetric Eigen Analysis
   typedef itk::FixedArray< double, 3 > EigenValuesArrayType;
@@ -132,9 +132,9 @@ LabelToLineImageFilter< TInput, TOutput >
   analysis.ComputeEigenValuesAndVectors( covarianceAlgorithm->GetCovarianceMatrix(),
                                          eigenValues, eigenMatrix );    
   
-  std::cout << "EigenValues: " << eigenValues << std::endl;
-  std::cout << "EigenVectors (each row is an an eigen vector): " << std::endl;
-  std::cout << eigenMatrix << std::endl;
+  //std::cout << "EigenValues: " << eigenValues << std::endl;
+  //std::cout << "EigenVectors (each row is an an eigen vector): " << std::endl;
+  //std::cout << eigenMatrix << std::endl;
 
   // Set axis length to reference from external routine
   // Note that the first element of m_AxisLength[] is the principal axis.
@@ -230,7 +230,8 @@ LabelToLineImageFilter< TInput, TOutput >
     
     // Convert translation for slicer coordinate
     m_LineTransform->SetMatrix( matrix );
-    m_LineTransform->Translate( - (matrix * lineCenterOfMass) );
+    //m_LineTransform->Translate( - (matrix * lineCenterOfMass) );
+    m_LineTransform->Translate( lineCenterOfMass );
     }
 
 }

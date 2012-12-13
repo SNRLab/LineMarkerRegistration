@@ -87,68 +87,96 @@ EuclideanDistanceLineMetric<TFixedPointSet,TMovingPointSet,TDistanceMap>
 
   // length of measure is (number of point sets) / 2
   MeasureType measure;
-  measure.set_size(movingPointSet->GetPoints()->Size()/2);
+  //measure.set_size(movingPointSet->GetPoints()->Size()/2);
+  measure.set_size(movingPointSet->GetPoints()->Size());
+  
+  //if (movingPointSet->GetPoints()->Size() % 2 != 0)
+  //  {
+  //  return measure;
+  //  }
 
   this->SetTransformParameters( parameters );
-
   unsigned int identifier = 0;
+
+  std::vector<double> minimumDistanceVec;
   while( pointItr != pointEnd )
     {
+    
     typename Superclass::InputPointType  inputPoint;
+
+    // Base point
     inputPoint.CastFrom( pointItr.Value() );
     typename Superclass::OutputPointType transformedPoint = 
       this->m_Transform->TransformPoint( inputPoint );
     ++pointItr;
 
-    typename Superclass::InputPointType  inputVector;
-    inputVector.CastFrom( pointItr.Value() );
+    // Normal vector
+    inputPoint.CastFrom( pointItr.Value() );
     typename Superclass::OutputPointType transformedVector = 
-      this->m_Transform->TransformPoint( inputVector );
+      this->m_Transform->TransformPoint( inputPoint );
     ++pointItr;
+    
+    // Find 2 points on the moving line sets
+    typename Superclass::InputPointType point0;
+    typename Superclass::InputPointType point1;
 
-    double minimumDistance = -1.0; // distance is initialized with value < 0
-    bool closestPoint = false;
-    if(!closestPoint)
+    for (int i = 0; i < 3; i ++)
       {
-      // Find 2 points on the moving line sets
-      typename Superclass::InputPointType point0;
-      typename Superclass::InputPointType point1;
-      for (int i = 0; i < 3; i ++)
-        {
-        // Assuming the length of the normal vector is 1
-        point0[i] = transformedPoint->GetElement(i) - transformedVector->GetElement(i)/2.0;
-        point1[i] = transformedPoint->GetElement(i) + transformedVector->GetElement(i)/2.0;
-        }
+      // Assuming the length of the normal vector is 1
+      point0[i] = transformedPoint[i] - transformedVector[i]*30.0;
+      point1[i] = transformedPoint[i] + transformedVector[i]*30.0;
+      }
+    // Go trough the list of fixed point and find the closest distance
+    PointIterator pointItr2 = fixedPointSet->GetPoints()->Begin();
+    PointIterator pointEnd2 = fixedPointSet->GetPoints()->End();
+    
+    double minimumDistance = NumericTraits<double>::max();
+    double distance0 = 0.0;
+    double distance1 = 0.0;
 
-      // Go trough the list of fixed point and find the closest distance
-      PointIterator pointItr2 = fixedPointSet->GetPoints()->Begin();
-      PointIterator pointEnd2 = fixedPointSet->GetPoints()->End();
-    
-      while( pointItr2 != pointEnd2 )
+    while( pointItr2 != pointEnd2 )
+      {
+      typename Superclass::InputPointType  lineBasePoint;
+      lineBasePoint.CastFrom( pointItr2.Value() );
+      ++pointItr2;
+      
+      typename Superclass::InputPointType  lineNormalVector;
+      lineNormalVector.CastFrom( pointItr2.Value() );
+      ++pointItr2;
+
+      //std::cerr << "lineBasePoint=" 
+      //          << lineBasePoint[0] << ", "
+      //          << lineBasePoint[1] << ", "
+      //          << lineBasePoint[2] << std::endl;
+
+      double sqdist0  = PointToLineDistanceSq(point0, lineBasePoint, lineNormalVector);
+      double sqdist1  = PointToLineDistanceSq(point1, lineBasePoint, lineNormalVector);
+      //double rms_dist = vcl_sqrt((sqdist0+sqdist1)/2.0);
+      double rms_dist = vcl_sqrt(PointToLineDistanceSq(transformedPoint, lineBasePoint, lineNormalVector));
+      double dist0  = vcl_sqrt(sqdist0);
+      double dist1  = vcl_sqrt(sqdist1);
+      if (rms_dist < minimumDistance)
         {
-        typename Superclass::InputPointType  lineBasePoint;
-        lineBasePoint.CastFrom( pointItr2.Value() );
-        ++pointItr2;
-        
-        typename Superclass::InputPointType  lineNormalVector;
-        lineNormalVector.CastFrom( pointItr2.Value() );
-        ++pointItr2;
-        double sqdist0  = PointToLineDistanceSq(point0, lineBasePoint, lineNormalVector);
-        double sqdist1  = PointToLineDistanceSq(point1, lineBasePoint, lineNormalVector);
-        double rms_dist = vcl_sqrt((sqdist0+sqdist1)/2.0);
-    
-        if (minimumDistance < 0.0 || rms_dist < minimumDistance)
-          {
-          minimumDistance = rms_dist;
-          }
+        minimumDistance = rms_dist;
+        distance0 = dist0;
+        distance1 = dist1;
         }
       }
+    //minimumDistanceVec.push_back(minimumDistance);
     measure.put(identifier,minimumDistance);
-    
-    ++pointItr;
+    identifier++;
+    measure.put(identifier,minimumDistance);
     identifier++;
     }
   
+  //std::cerr << "minimumDistance = [";
+  //std::vector<double>::iterator iter;
+  //for (iter = minimumDistanceVec.begin(); iter != minimumDistanceVec.end(); iter ++)
+  //  {
+  //  std::cerr << *iter << ", ";
+  //  }
+  //std::cerr << "]" << std::endl;
+
   return measure;
 
 }
@@ -165,21 +193,26 @@ EuclideanDistanceLineMetric<TFixedPointSet,TMovingPointSet,TDistanceMap>
   // by the combination of the base point ('lineBasePoint') and the normal vector
   // ('lineNOrmalVector').
 
+  double pointtopoint;
   double inner=0.0;
   for (int i = 0; i < 3; i ++)
     {
-    inner += point[i]-lineBasePoint[i] * lineNormalVector[i];
+    inner += (point[i]-lineBasePoint[i]) * lineNormalVector[i];
+    pointtopoint += (point[i]-lineBasePoint[i])*(point[i]-lineBasePoint[i]); //TEST
     }
   
   double sqdistance=0.0;
   for (int i = 0; i < 3; i ++)
     {
     double elm = inner*lineNormalVector[i] + lineBasePoint[i] - point[i];
-    sqdistance = elm*elm;
+    sqdistance += elm*elm;
     }
   //double distance = vcl_sqrt(sqdistance);
-
-  return sqdistance;
+  //if (pointtopoint > 30*30)
+  //  return pointtopoint;
+  //else
+  //  return sqdistance;
+  return pointtopoint;
   
 }
 
