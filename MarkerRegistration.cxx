@@ -406,7 +406,7 @@ template<class T> int DoIt( int argc, char * argv[], T )
   
   // Scale the translation components of the Transform in the Optimizer
   OptimizerType::ScalesType scales( registrationTransform->GetNumberOfParameters() );
-  scales.Fill( 0.01 );
+  scales.Fill( 0.1 );
   //scales.Fill( 1.0 );
 
   //unsigned long   numberOfIterations =  1000;

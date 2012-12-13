@@ -123,8 +123,8 @@ EuclideanDistanceLineMetric<TFixedPointSet,TMovingPointSet,TDistanceMap>
     for (int i = 0; i < 3; i ++)
       {
       // Assuming the length of the normal vector is 1
-      point0[i] = transformedPoint[i] - transformedVector[i]*30.0;
-      point1[i] = transformedPoint[i] + transformedVector[i]*30.0;
+      point0[i] = transformedPoint[i] - transformedVector[i]*0.00;
+      point1[i] = transformedPoint[i] + transformedVector[i]*0.00;
       }
     // Go trough the list of fixed point and find the closest distance
     PointIterator pointItr2 = fixedPointSet->GetPoints()->Begin();
@@ -144,39 +144,24 @@ EuclideanDistanceLineMetric<TFixedPointSet,TMovingPointSet,TDistanceMap>
       lineNormalVector.CastFrom( pointItr2.Value() );
       ++pointItr2;
 
-      //std::cerr << "lineBasePoint=" 
-      //          << lineBasePoint[0] << ", "
-      //          << lineBasePoint[1] << ", "
-      //          << lineBasePoint[2] << std::endl;
-
+      double dist     = vcl_sqrt(PointToLineDistanceSq(transformedPoint, lineBasePoint, lineNormalVector));
       double sqdist0  = PointToLineDistanceSq(point0, lineBasePoint, lineNormalVector);
       double sqdist1  = PointToLineDistanceSq(point1, lineBasePoint, lineNormalVector);
-      //double rms_dist = vcl_sqrt((sqdist0+sqdist1)/2.0);
-      double rms_dist = vcl_sqrt(PointToLineDistanceSq(transformedPoint, lineBasePoint, lineNormalVector));
-      double dist0  = vcl_sqrt(sqdist0);
-      double dist1  = vcl_sqrt(sqdist1);
-      if (rms_dist < minimumDistance)
+      double dist0    = vcl_sqrt(sqdist0);
+      double dist1    = vcl_sqrt(sqdist1);
+      if (dist < minimumDistance)
         {
-        minimumDistance = rms_dist;
+        minimumDistance = dist;
         distance0 = dist0;
         distance1 = dist1;
         }
       }
-    //minimumDistanceVec.push_back(minimumDistance);
-    measure.put(identifier,minimumDistance);
+    measure.put(identifier,distance0);
     identifier++;
-    measure.put(identifier,minimumDistance);
+    measure.put(identifier,distance1);
     identifier++;
     }
   
-  //std::cerr << "minimumDistance = [";
-  //std::vector<double>::iterator iter;
-  //for (iter = minimumDistanceVec.begin(); iter != minimumDistanceVec.end(); iter ++)
-  //  {
-  //  std::cerr << *iter << ", ";
-  //  }
-  //std::cerr << "]" << std::endl;
-
   return measure;
 
 }
@@ -193,26 +178,26 @@ EuclideanDistanceLineMetric<TFixedPointSet,TMovingPointSet,TDistanceMap>
   // by the combination of the base point ('lineBasePoint') and the normal vector
   // ('lineNOrmalVector').
 
-  double pointtopoint;
+  //double pointtopoint;
   double inner=0.0;
   for (int i = 0; i < 3; i ++)
     {
     inner += (point[i]-lineBasePoint[i]) * lineNormalVector[i];
-    pointtopoint += (point[i]-lineBasePoint[i])*(point[i]-lineBasePoint[i]); //TEST
     }
-  
   double sqdistance=0.0;
   for (int i = 0; i < 3; i ++)
     {
     double elm = inner*lineNormalVector[i] + lineBasePoint[i] - point[i];
     sqdistance += elm*elm;
     }
-  //double distance = vcl_sqrt(sqdistance);
-  //if (pointtopoint > 30*30)
-  //  return pointtopoint;
-  //else
-  //  return sqdistance;
-  return pointtopoint;
+
+  //pointtopoint = 
+  //  (point[0]-lineBasePoint[0])*(point[0]-lineBasePoint[0])+ //TEST
+  //  (point[1]-lineBasePoint[1])*(point[1]-lineBasePoint[1])+ //TEST
+  //  (point[2]-lineBasePoint[2])*(point[2]-lineBasePoint[2]);
+  
+  //return pointtopoint;
+  return sqdistance;
   
 }
 
