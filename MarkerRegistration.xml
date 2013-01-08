@@ -114,24 +114,20 @@ This work is part of NIH 5R01 CA111288 -- Enabling Technologies for MRI-guided P
       <default>1500</default>
     </float>
     <float>
+      <name>minimumPrincipalAxisLength</name>
+      <longflag>--minimumPrincipalAxisLength</longflag>
+      <description>
+	Minimum length of the principal axis of the line artifact.
+      </description>
+      <label>Minimum Principal Axis Length</label>
+      <default>10.0</default>
+    </float>
+    <float>
       <name>maximumMinorAxis</name>
       <longflag>--maximumMinorAxis</longflag>
       <description>Maximum length of minor axis of the reagion (mm^2). This parameter can be used to get rid of shapes that does not look like a straight line.</description>
       <label>Maximum Minor Axis Length (pixel)</label>
-      <default>10</default>
-    </float>
-  </parameters>
-  <parameters>
-    <label>Line Identification Parameters</label>
-    <description>Parameters for Line Identification using PCA</description>
-    <float>
-      <name>minPrincipalAxisLength</name>
-      <longflag>--minPrincipalAxisLength</longflag>
-      <description>
-	Minimum length of the principal axis of the line artifact.
-      </description>
-      <label>Min. Principal Axis Length</label>
-      <default>50.0</default>
+      <default>5.0</default>
     </float>
   </parameters>
 

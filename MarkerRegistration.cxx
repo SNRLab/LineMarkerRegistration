@@ -131,6 +131,7 @@ template<class T> int DoIt( int argc, char * argv[], T )
     OutputImageType, OutputImageType >  CCFilterType;
   typedef   itk::RelabelComponentImageFilter<
     OutputImageType, OutputImageType > RelabelType;
+
   // Line detection filter
   typedef   itk::LabelToLineImageFilter<
   OutputImageType, OutputImageType > LabelLineFilterType;
@@ -257,6 +258,18 @@ template<class T> int DoIt( int argc, char * argv[], T )
       FixedPointType norm;
       labelLineFilter->SetLabel( label );
       labelLineFilter->Update();
+      typedef typename LabelLineFilterType::VectorType VectorType;
+      VectorType axisLength;
+      labelLineFilter->GetAxisLength(axisLength);
+      // If the principal axis is less than the minimumPrincipalAxisLength or 
+      // if any of the minor axes are longer than maximumMinorAxis
+      if (axisLength[0] < minimumPrincipalAxisLength ||
+          axisLength[1] > maximumMinorAxis || axisLength[2] > maximumMinorAxis)
+        {
+        changeMap[label] = 0;
+        continue;
+        }
+
       TransformType::Pointer transform = labelLineFilter->GetLineTransform();
       TransformType::MatrixType matrix = transform->GetMatrix();
       TransformType::OutputVectorType trans = transform->GetTranslation();
