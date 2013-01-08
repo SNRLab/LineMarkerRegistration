@@ -31,11 +31,11 @@ This work is part of NIH 5R01 CA111288 -- Enabling Technologies for MRI-guided P
       <index>1</index>
       <description>Blurred Volume</description>
     </image>
-    <transform fileExtensions=".txt" reference="LinePositionFileName">
-      <name>lineTransform</name>
-      <longflag>linetransform</longflag>
-      <description>Position and orientation of detected line.</description>
-      <label>Line transform</label>
+    <transform fileExtensions=".txt" reference="PositionFileName">
+      <name>markerTransform</name>
+      <longflag>markertransform</longflag>
+      <description>Position and orientation of detected marker.</description>
+      <label>Marker transform</label>
       <channel>output</channel>
     </transform>
   </parameters>
