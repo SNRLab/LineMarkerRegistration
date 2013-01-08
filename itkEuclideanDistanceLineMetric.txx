@@ -98,6 +98,10 @@ EuclideanDistanceLineMetric<TFixedPointSet,TMovingPointSet,TDistanceMap>
   this->SetTransformParameters( parameters );
   unsigned int identifier = 0;
 
+  // 
+  typename TransformType::InputVectorType tmpInputVector;
+  typename TransformType::OutputVectorType tmpOutputVector;
+
   std::vector<double> minimumDistanceVec;
   while( pointItr != pointEnd )
     {
@@ -111,9 +115,19 @@ EuclideanDistanceLineMetric<TFixedPointSet,TMovingPointSet,TDistanceMap>
     ++pointItr;
 
     // Normal vector
+    // NOTE: since InputPointType is used to present vector,
+    //  we first convirt it to InputVectorType, transform, and
+    //  convert to OutputPointType
     inputPoint.CastFrom( pointItr.Value() );
-    typename Superclass::OutputPointType transformedVector = 
-      this->m_Transform->TransformPoint( inputPoint );
+    tmpInputVector[0] = inputPoint[0];
+    tmpInputVector[1] = inputPoint[1];
+    tmpInputVector[2] = inputPoint[2];
+    tmpOutputVector = this->m_Transform->TransformVector( tmpInputVector );
+
+    typename Superclass::OutputPointType transformedVector;
+    transformedVector[0] = tmpOutputVector[0];
+    transformedVector[1] = tmpOutputVector[1];
+    transformedVector[2] = tmpOutputVector[2];
     ++pointItr;
     
     // Find 2 points on the moving line sets
@@ -123,8 +137,8 @@ EuclideanDistanceLineMetric<TFixedPointSet,TMovingPointSet,TDistanceMap>
     for (int i = 0; i < 3; i ++)
       {
       // Assuming the length of the normal vector is 1
-      point0[i] = transformedPoint[i] - transformedVector[i]*0.00;
-      point1[i] = transformedPoint[i] + transformedVector[i]*0.00;
+      point0[i] = transformedPoint[i] - transformedVector[i]*1.0;
+      point1[i] = transformedPoint[i] + transformedVector[i]*1.0;
       }
     // Go trough the list of fixed point and find the closest distance
     PointIterator pointItr2 = fixedPointSet->GetPoints()->Begin();
@@ -144,11 +158,12 @@ EuclideanDistanceLineMetric<TFixedPointSet,TMovingPointSet,TDistanceMap>
       lineNormalVector.CastFrom( pointItr2.Value() );
       ++pointItr2;
 
-      double dist     = vcl_sqrt(PointToLineDistanceSq(transformedPoint, lineBasePoint, lineNormalVector));
+      //double dist     = vcl_sqrt(PointToLineDistanceSq(transformedPoint, lineBasePoint, lineNormalVector));
       double sqdist0  = PointToLineDistanceSq(point0, lineBasePoint, lineNormalVector);
       double sqdist1  = PointToLineDistanceSq(point1, lineBasePoint, lineNormalVector);
       double dist0    = vcl_sqrt(sqdist0);
       double dist1    = vcl_sqrt(sqdist1);
+      double dist     = vcl_sqrt((sqdist0+sqdist1)/2.0);
       if (dist < minimumDistance)
         {
         minimumDistance = dist;

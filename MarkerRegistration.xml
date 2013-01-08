@@ -4,7 +4,7 @@
   <index>3</index>
   <title>Marker Registration</title>
   <description>
-	  Apply a gaussian blurr to an image
+    Automatic Detection and Registration of Configurable Marker
 </description>
   <version>0.1.0.$Revision: 1.1 $(alpha)</version>
   <documentation-url>http://https://github.com/SNRLab/MarkerRegistration</documentation-url>

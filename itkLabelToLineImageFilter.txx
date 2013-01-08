@@ -228,9 +228,7 @@ LabelToLineImageFilter< TInput, TOutput >
     matrix[2][1] = lineNorm[1];
     matrix[2][2] = lineNorm[2];
     
-    // Convert translation for slicer coordinate
     m_LineTransform->SetMatrix( matrix );
-    //m_LineTransform->Translate( - (matrix * lineCenterOfMass) );
     m_LineTransform->Translate( lineCenterOfMass );
     }
 

@@ -37,6 +37,8 @@
 #include "itkEuclideanDistanceLineMetric.h"
 #include "itkChangeLabelImageFilter.h"
 
+#include "itkAffineTransform.h"
+
 #include "itkImage.h"
 #include "itkImageFileReader.h"
 #include "itkImageFileWriter.h"
@@ -395,15 +397,12 @@ template<class T> int DoIt( int argc, char * argv[], T )
 
   movingPointSet->SetPoints( movingPointSetContainer );
 
-  //typedef itk::EuclideanDistanceLineMetric<PointSetType, PointSetType> LineDistanceMetric;
   typedef LineDistanceMetric::TransformType          TransformBaseType;
   typedef TransformBaseType::ParametersType         ParametersType;
   typedef TransformBaseType::JacobianType           JacobianType;
 
   LineDistanceMetric::Pointer metric = LineDistanceMetric::New();
-  //typedef itk::Rigid3DTransform < double >   RegistrationTransformType;
-  typedef itk::TranslationTransform< double, Dimension >      RegistrationTransformType;
-  //typedef itk::Euler3DTransform< double >      RegistrationTransformType;
+  typedef itk::Euler3DTransform< double >      RegistrationTransformType;
   RegistrationTransformType::Pointer registrationTransform = RegistrationTransformType::New();
 
   // Optimizer Type
@@ -415,27 +414,20 @@ template<class T> int DoIt( int argc, char * argv[], T )
   // Registration Method
   typedef itk::PointSetToPointSetRegistrationMethod< PointSetType, PointSetType > RegistrationType;
   RegistrationType::Pointer   registration  = RegistrationType::New();
-  //registration->SetNumberOfThreads(1);
+  //registration->SetNumberOfThreads(2);
   
   // Scale the translation components of the Transform in the Optimizer
   OptimizerType::ScalesType scales( registrationTransform->GetNumberOfParameters() );
-  scales.Fill( 0.1 );
-  //scales.Fill( 1.0 );
 
-  //unsigned long   numberOfIterations =  1000;
-  //double          gradientTolerance  =  1e-5;    // convergence criterion
-  //double          valueTolerance     =  1e-5;    // convergence criterion
-  //double          epsilonFunction    =  1e-6;   // convergence criterion
-
-  //const double translationScale = 10000.0;   // dynamic range of translations
-  //const double rotationScale    =    1.0;   // dynamic range of rotations
-  //
-  //scales[0] = 1.0 / rotationScale;
-  //scales[1] = 1.0 / rotationScale;
-  //scales[2] = 1.0 / rotationScale;
-  //scales[3] = 1.0 / translationScale; 
-  //scales[4] = 1.0 / translationScale; 
-  //scales[5] = 1.0 / translationScale;
+  const double translationScale = 10.0;   // dynamic range of translations
+  const double rotationScale    = 1000.0;   // dynamic range of rotations
+  
+  scales[0] = 1.0 / rotationScale;
+  scales[1] = 1.0 / rotationScale;
+  scales[2] = 1.0 / rotationScale;
+  scales[3] = 1.0 / translationScale; 
+  scales[4] = 1.0 / translationScale; 
+  scales[5] = 1.0 / translationScale;
 
   unsigned long   numberOfIterations =  5000;
   double          gradientTolerance  =  1e-4;   // convergence criterion
@@ -481,7 +473,38 @@ template<class T> int DoIt( int argc, char * argv[], T )
     return EXIT_FAILURE;
     }
 
-  std::cout << "Solution = " << registrationTransform->GetParameters() << std::endl;
+  std::cerr << "Solution = " << registrationTransform->GetParameters() << std::endl;
+
+  // Convert Euler 3D transform to Rigid 3D Transform
+  typedef itk::AffineTransform<double, 3> MarkerTransformType;
+  //typedef typename itk::CenteredAffineTransform< double, 3 > MarkerTransformType;
+  MarkerTransformType::Pointer transform = MarkerTransformType::New();
+
+  transform->SetIdentity();
+  transform->SetOffset(registrationTransform->GetOffset());
+  transform->SetMatrix(registrationTransform->GetMatrix());
+  
+  // Calculate Inverse Matrix to pass the transform to Slicer.
+  MarkerTransformType::Pointer outputTransform = MarkerTransformType::New();
+  transform->GetInverse(outputTransform);
+
+  if (markerTransform != "")
+    {
+    typedef itk::TransformFileWriter TransformWriterType;
+    TransformWriterType::Pointer markerTransformWriter;
+    markerTransformWriter= TransformWriterType::New();
+    markerTransformWriter->SetFileName( markerTransform );
+    markerTransformWriter->SetInput( outputTransform );
+    try
+      {
+      markerTransformWriter->Update();
+      }
+    catch (itk::ExceptionObject &err)
+      {
+      std::cerr << err << std::endl;
+      return EXIT_FAILURE ;
+      }
+    }
 
   return EXIT_SUCCESS;
 }
