@@ -1,10 +1,11 @@
 /*=========================================================================
 
-  Program:   Insight Segmentation & Registration Toolkit
-  Module:    itkEuclideanDistancePointMetric.txx
+  Program:   LineMarkerRegistration CLI for 3D Slicer
+  Module:    itkEuclideanDistanceLineMetric.h
   Language:  C++
-  Date:      $Date$
-  Version:   $Revision$
+  Contributor: Junichi Tokuda (BWH)
+
+  This code is based on itkEuclideanDistanceMetric.txx in ITK.
 
   Copyright (c) Insight Software Consortium. All rights reserved.
   See ITKCopyright.txt or http://www.itk.org/HTML/Copyright.htm for details.

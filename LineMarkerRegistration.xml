@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <executable>
-  <category>Filtering</category>
+  <category>IGT</category>
   <index>3</index>
-  <title>Marker Registration</title>
+  <title>Line Marker Registration</title>
   <description>
-    Automatic Detection and Registration of Configurable Marker
+    The Line Marker Registration CLI automatically detects a fiducial marker consisting of multiple lines on a 3D image and register the marker to the image coordinate system. The users can configure the CLI to use their own fiducial marker design by creating a marker configuration file formatted in CSV. 
 </description>
   <version>0.1.0.$Revision: 1.1 $(alpha)</version>
-  <documentation-url>http://https://github.com/SNRLab/MarkerRegistration</documentation-url>
+  <documentation-url>http://https://github.com/SNRLab/LineMarkerRegistration</documentation-url>
   <license></license>
-  <contributor>Junichi Tokuda</contributor>
+  <contributor>Junichi Tokuda, Ph.D. (BWH)</contributor>
 <acknowledgements>
-This work is part of NIH 5R01 CA111288 -- Enabling Technologies for MRI-guided Prostate Interventions (PI: Clare M. Tempany).
+This work is supported by NIH (R01 CA111288, P41 EB015898, U54 EB005149, R01 CA138586) and CIMIT.
 </acknowledgements>
 
   <parameters>

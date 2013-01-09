@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8.7)
 
-set(MODULE_NAME MarkerRegistration)
+set(MODULE_NAME LineMarkerRegistration)
 
 #-----------------------------------------------------------------------------
 if(NOT Slicer_SOURCE_DIR)

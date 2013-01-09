@@ -1,10 +1,11 @@
 /*=========================================================================
 
-  Program:   Insight Segmentation & Registration Toolkit
-  Module:    $RCSfile: itkHessian3DToLineImageFilter.h,v $
+  Program:   LineMarkerRegistration CLI for 3D Slicer
+  Module:    itkLabelToLineImageFilter.h
   Language:  C++
-  Date:      $Date: 2009-04-25 12:27:26 $
-  Version:   $Revision: 1.9 $
+  Contributor: Junichi Tokuda (BWH)
+
+  This code is based on vtkImageToImageFilter.h in ITK.
 
   Copyright (c) Insight Software Consortium. All rights reserved.
   See ITKCopyright.txt or http://www.itk.org/HTML/Copyright.htm for details.

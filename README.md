@@ -1,2 +1,2 @@
-MarkerRegistration
-==================
+LineMarkerRegistration
+======================
