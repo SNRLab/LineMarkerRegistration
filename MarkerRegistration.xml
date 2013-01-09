@@ -24,11 +24,18 @@ This work is part of NIH 5R01 CA111288 -- Enabling Technologies for MRI-guided P
       <index>0</index>
       <description>Input volume</description>
     </image>
+    <file>
+      <name>markerConfigFile</name>
+      <label>Marker Config File</label>
+      <channel>input</channel>
+      <index>1</index>
+      <description>Marker Configuration File</description>
+    </file>
     <image type="label">
       <name>outputVolume</name>
       <label>Output Volume</label>
       <channel>output</channel>
-      <index>1</index>
+      <index>2</index>
       <description>Blurred Volume</description>
     </image>
     <transform fileExtensions=".txt" reference="PositionFileName">

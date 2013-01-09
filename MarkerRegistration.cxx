@@ -92,13 +92,80 @@ public:
       return;
       }
 
-    std::cout << "Value = " << optimizer->GetCachedValue() << std::endl; 
-    std::cout << "Position = "  << optimizer->GetCachedCurrentPosition();
-    std::cout << std::endl << std::endl;
-
+    //std::cout << "Value = " << optimizer->GetCachedValue() << std::endl; 
+    //std::cout << "Position = "  << optimizer->GetCachedCurrentPosition();
+    //std::cout << std::endl << std::endl;
     }
    
 };
+
+
+typedef std::vector<double> CoordType;
+typedef std::vector<CoordType> CoordSetType;
+
+
+// Load the configuration file. If successful, return > 0
+// TODO: This is a tentative solution. The fucntion has to be replaced by XML parser.
+int LoadMarkerConfiguration(const char* filename, CoordSetType& points)
+{
+  std::string line;
+  std::ifstream configfile (filename);
+  if (!configfile.is_open())
+    {
+    std::cerr << "Unable to open file" << std::endl; 
+    return 0;
+    }
+
+  points.clear();
+
+  CoordType point(3);
+  CoordType norm(3);
+
+  std::cout << "Marker Configuration File: " << filename << std::endl;
+  while ( configfile.good() )
+    {
+    int pointId = 0;
+    while(std::getline(configfile,line))
+      {
+      std::vector<double> values;
+      std::stringstream  lineStream(line);
+      std::string        cell;
+      values.clear();
+      while(std::getline(lineStream,cell,','))
+        {
+        values.push_back(::atof(cell.c_str()));
+        }
+      if (values.size() == 6)
+        {
+        point[0] = values[0];
+        point[1] = values[1];
+        point[2] = values[2];
+        norm[0] = values[3];
+        norm[1] = values[4];
+        norm[2] = values[5];
+        points.push_back(point);
+        points.push_back(norm);
+        std::cout << "Fiducial #" << pointId << ": "
+                  << "Point=("  << point[0] << ", " << point[1] << ", " << point[2] << "); "
+                  << "Normal=(" << norm[0] << ", " << norm[1] << ", " << norm[2] << ")"
+                  << std::endl;
+        pointId ++;
+        } 
+      else
+        {
+        if (values.size() != 0)
+          {
+          std::cout << "Invalid format!" << std::endl;
+          return 0;
+          }
+        }
+
+      }
+    }
+  configfile.close();
+  
+  return 1;
+}
 
 
 template<class T> int DoIt( int argc, char * argv[], T )
@@ -110,6 +177,7 @@ template<class T> int DoIt( int argc, char * argv[], T )
   typedef   T                   FileInputPixelType;
   typedef   float               InternalPixelType;
   typedef   int                 OutputPixelType;
+
 
   typedef   itk::Image< FileInputPixelType, Dimension > FileInputImageType;
   typedef   itk::Image< InternalPixelType, Dimension >  InternalImageType;
@@ -162,6 +230,44 @@ template<class T> int DoIt( int argc, char * argv[], T )
   typename RelabelType::Pointer RelabelFilter = RelabelType::New();
   typename LabelLineFilterType::Pointer labelLineFilter = LabelLineFilterType::New();
 
+  // Detect lines from the label map
+  typedef itk::PointSet< float, 3 >   PointSetType;
+  typedef typename LabelLineFilterType::LineTransformType TransformType;
+  typedef itk::EuclideanDistanceLineMetric<PointSetType, PointSetType> LineDistanceMetric;
+  
+  typedef typename LineDistanceMetric::MovingPointSetType MovingPointSetType;
+  typedef typename MovingPointSetType::PointsContainer MovingPointSetContainer;
+  typedef typename MovingPointSetType::PointType MovingPointType;
+  
+  typedef typename LineDistanceMetric::FixedPointSetType FixedPointSetType;
+  typedef typename FixedPointSetType::PointsContainer FixedPointSetContainer;
+  typedef typename FixedPointSetType::PointType FixedPointType;
+
+  //
+  // Create pointset of the Z-frame
+  // TODO: this has to be configurable (e.g. XML)
+  //
+  MovingPointSetType::Pointer movingPointSet = MovingPointSetType::New();
+  MovingPointSetContainer::Pointer movingPointSetContainer = MovingPointSetContainer::New();
+
+  CoordSetType points;
+  if (LoadMarkerConfiguration(markerConfigFile.c_str(), points) <= 0)
+    {
+    return EXIT_FAILURE ;
+    }
+
+  int id = 0;
+  CoordSetType::iterator iter;
+  for (iter = points.begin(); iter != points.end(); iter ++)
+    {
+    MovingPointType point;
+    point[0] = (*iter)[0];
+    point[1] = (*iter)[1];
+    point[2] = (*iter)[2];
+    movingPointSetContainer->InsertElement(id, point);
+    id ++;
+    }
+
   reader->SetFileName( inputVolume.c_str() );
   writer->SetFileName( outputVolume.c_str() );
 
@@ -206,19 +312,6 @@ template<class T> int DoIt( int argc, char * argv[], T )
   int min = (int) (minimumObjectSize/(spacing[0]*spacing[1]*spacing[2]));
   RelabelFilter->SetMinimumObjectSize( min );
   RelabelFilter->Update();
-
-  // Detect lines from the label map
-  typedef itk::PointSet< float, 3 >   PointSetType;
-  typedef typename LabelLineFilterType::LineTransformType TransformType;
-  typedef itk::EuclideanDistanceLineMetric<PointSetType, PointSetType> LineDistanceMetric;
-
-  typedef typename LineDistanceMetric::MovingPointSetType MovingPointSetType;
-  typedef typename MovingPointSetType::PointsContainer MovingPointSetContainer;
-  typedef typename MovingPointSetType::PointType MovingPointType;
-
-  typedef typename LineDistanceMetric::FixedPointSetType FixedPointSetType;
-  typedef typename FixedPointSetType::PointsContainer FixedPointSetContainer;
-  typedef typename FixedPointSetType::PointType FixedPointType;
 
   MovingPointSetContainer::Pointer movingPointContainer = MovingPointSetContainer::New();
 
@@ -319,82 +412,6 @@ template<class T> int DoIt( int argc, char * argv[], T )
     }
 
 
-  //
-  // Create pointset of the Z-frame
-  // TODO: this has to be configurable (e.g. XML)
-  //
-  MovingPointSetType::Pointer movingPointSet = MovingPointSetType::New();
-  MovingPointSetContainer::Pointer movingPointSetContainer = MovingPointSetContainer::New();
-
-  // int directions
-  double R=-1.0; double L=1.0;
-  double A=-1.0; double P=1.0;
-  double S=1.0; double I=-1.0;
-  pointId = 0;
-
-  MovingPointType point0;
-  MovingPointType norm0;
-  point0[0] = L*30.0; point0[1] = P*30.0; point0[2] = S*0.0;
-  norm0[0] = 0.0; norm0[1] = 0.0; norm0[2] = S*1.0;
-  movingPointSetContainer->InsertElement(pointId, point0);
-  pointId++;
-  movingPointSetContainer->InsertElement(pointId, norm0);
-  pointId++;
-
-  MovingPointType point1;
-  MovingPointType norm1;
-  point1[0] = L*30.0; point1[1] = P*0.0; point1[2] = S*0.0;
-  norm1[0] = 0.0; norm1[1] = A/sqrt(2.0); norm1[2] = S/sqrt(2.0);
-  movingPointSetContainer->InsertElement(pointId, point1);
-  pointId++;
-  movingPointSetContainer->InsertElement(pointId, norm1);
-  pointId++;
-
-  MovingPointType point2;
-  MovingPointType norm2;
-  point2[0] = L*30.0; point2[1] = A*30.0; point2[2] = S*0.0;
-  norm2[0] = 0.0; norm2[1] = 0.0; norm2[2] = S*1.0;
-  movingPointSetContainer->InsertElement(pointId, point2);
-  pointId++;
-  movingPointSetContainer->InsertElement(pointId, norm2);
-  pointId++;
-
-  MovingPointType point3;
-  MovingPointType norm3;
-  point3[0] = L*0.0; point3[1] = A*30.0; point3[2] = S*0.0;
-  norm3[0] = R/sqrt(2.0); norm3[1] = 0.0; norm3[2] = S/sqrt(2.0);
-  movingPointSetContainer->InsertElement(pointId, point3);
-  pointId++;
-  movingPointSetContainer->InsertElement(pointId, norm3);
-  pointId++;
-
-  MovingPointType point4;
-  MovingPointType norm4;
-  point4[0] = R*30.0; point4[1] = A*30.0; point4[2] = S*0.0;
-  norm4[0] = 0.0; norm4[1] = 0.0; norm4[2] = S*1.0;
-  movingPointSetContainer->InsertElement(pointId, point4);
-  pointId++;
-  movingPointSetContainer->InsertElement(pointId, norm4);
-  pointId++;
-
-  MovingPointType point5;
-  MovingPointType norm5;
-  point5[0] = R*30.0; point5[1] = A*0.0; point5[2] = S*0.0;
-  norm5[0] = 0.0; norm5[1] = P/2.0; norm5[2] = S/2.0;
-  movingPointSetContainer->InsertElement(pointId, point5);
-  pointId++;
-  movingPointSetContainer->InsertElement(pointId, norm5);
-  pointId++;
-
-  MovingPointType point6;
-  MovingPointType norm6;
-  point6[0] = R*30.0; point6[1] = P*30.0; point6[2] = S*0.0;
-  norm6[0] = 0.0; norm6[1] = 0.0; norm6[2] = S;
-  movingPointSetContainer->InsertElement(pointId, point6);
-  pointId++;
-  movingPointSetContainer->InsertElement(pointId, norm6);
-  pointId++;
-
   movingPointSet->SetPoints( movingPointSetContainer );
 
   typedef LineDistanceMetric::TransformType          TransformBaseType;
@@ -473,8 +490,6 @@ template<class T> int DoIt( int argc, char * argv[], T )
     return EXIT_FAILURE;
     }
 
-  std::cerr << "Solution = " << registrationTransform->GetParameters() << std::endl;
-
   // Convert Euler 3D transform to Rigid 3D Transform
   typedef itk::AffineTransform<double, 3> MarkerTransformType;
   //typedef typename itk::CenteredAffineTransform< double, 3 > MarkerTransformType;
@@ -484,6 +499,11 @@ template<class T> int DoIt( int argc, char * argv[], T )
   transform->SetOffset(registrationTransform->GetOffset());
   transform->SetMatrix(registrationTransform->GetMatrix());
   
+  std::cout << "Solution: " << std::endl;
+  std::cout << "Offset:   " << transform->GetOffset() << std::endl;
+  std::cout << "Rotation: " << std::endl;
+  std::cout << transform->GetMatrix() << std::endl;
+
   // Calculate Inverse Matrix to pass the transform to Slicer.
   MarkerTransformType::Pointer outputTransform = MarkerTransformType::New();
   transform->GetInverse(outputTransform);
@@ -508,6 +528,7 @@ template<class T> int DoIt( int argc, char * argv[], T )
 
   return EXIT_SUCCESS;
 }
+
 
 } // end of anonymous namespace
 
