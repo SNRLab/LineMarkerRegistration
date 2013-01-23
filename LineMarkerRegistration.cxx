@@ -437,7 +437,7 @@ template<class T> int DoIt( int argc, char * argv[], T )
   OptimizerType::ScalesType scales( registrationTransform->GetNumberOfParameters() );
 
   const double translationScale = 10.0;   // dynamic range of translations
-  const double rotationScale    = 1000.0;   // dynamic range of rotations
+  const double rotationScale    = 5000.0;   // dynamic range of rotations
   
   scales[0] = 1.0 / rotationScale;
   scales[1] = 1.0 / rotationScale;
@@ -446,10 +446,10 @@ template<class T> int DoIt( int argc, char * argv[], T )
   scales[4] = 1.0 / translationScale; 
   scales[5] = 1.0 / translationScale;
 
-  unsigned long   numberOfIterations =  5000;
-  double          gradientTolerance  =  1e-4;   // convergence criterion
-  double          valueTolerance     =  1e-4;   // convergence criterion
-  double          epsilonFunction    =  1e-5;   // convergence criterion
+  unsigned long   numberOfIterations =  5000000;
+  double          gradientTolerance  =  1e-12;   // convergence criterion
+  double          valueTolerance     =  1e-12;   // convergence criterion
+  double          epsilonFunction    =  1e-13;   // convergence criterion
 
   optimizer->SetScales( scales );
   optimizer->SetNumberOfIterations( numberOfIterations );
@@ -490,7 +490,7 @@ template<class T> int DoIt( int argc, char * argv[], T )
     return EXIT_FAILURE;
     }
 
-  // Convert Euler 3D transform to Rigid 3D Transform
+  // Convret Euler 3D transform to Rigid 3D Transform
   typedef itk::AffineTransform<double, 3> MarkerTransformType;
   //typedef typename itk::CenteredAffineTransform< double, 3 > MarkerTransformType;
   MarkerTransformType::Pointer transform = MarkerTransformType::New();

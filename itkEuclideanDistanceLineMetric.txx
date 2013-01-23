@@ -138,8 +138,8 @@ EuclideanDistanceLineMetric<TFixedPointSet,TMovingPointSet,TDistanceMap>
     for (int i = 0; i < 3; i ++)
       {
       // Assuming the length of the normal vector is 1
-      point0[i] = transformedPoint[i] - transformedVector[i]*1.0;
-      point1[i] = transformedPoint[i] + transformedVector[i]*1.0;
+      point0[i] = transformedPoint[i] - transformedVector[i]*10.0;
+      point1[i] = transformedPoint[i] + transformedVector[i]*10.0;
       }
     // Go trough the list of fixed point and find the closest distance
     PointIterator pointItr2 = fixedPointSet->GetPoints()->Begin();
