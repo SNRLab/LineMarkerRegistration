@@ -327,6 +327,11 @@ template<class T> int DoIt( int argc, char * argv[], T )
   //typename std::map< ChangeLabelFilter::InputPixelType, ChangeLabelFilter::OutputPixelType >  ChangeMapType;
 
   ChangeMapType changeMap;
+  FixedPointType Centroid;
+
+  Centroid[0] = 0.0;
+  Centroid[1] = 0.0;
+  Centroid[2] = 0.0;
 
   FixedPointSetType::Pointer fixedPointSet = FixedPointSetType::New();
   FixedPointSetContainer::Pointer fixedPointSetContainer = FixedPointSetContainer::New();
@@ -388,8 +393,17 @@ template<class T> int DoIt( int argc, char * argv[], T )
       pointId ++;
       fixedPointSetContainer->InsertElement(pointId, norm);
       pointId ++;
+
+      Centroid[0] += point[0];
+      Centroid[1] += point[1];
+      Centroid[2] += point[2];
+      
       }
     }
+  double nPoints = (double)pointId/2.0;
+  Centroid[0] /= nPoints;
+  Centroid[1] /= nPoints;
+  Centroid[2] /= nPoints;
 
   fixedPointSet->SetPoints( fixedPointSetContainer );
 
@@ -435,21 +449,20 @@ template<class T> int DoIt( int argc, char * argv[], T )
   
   // Scale the translation components of the Transform in the Optimizer
   OptimizerType::ScalesType scales( registrationTransform->GetNumberOfParameters() );
+  scales.Fill(0.01);
+  //const double translationScale = 500;   // dynamic range of translations
+  //const double rotationScale    = 5000;   // dynamic range of rotations
+  //scales[0] = 1.0 / rotationScale;
+  //scales[1] = 1.0 / rotationScale;
+  //scales[2] = 1.0 / rotationScale;
+  //scales[3] = 1.0 / translationScale; 
+  //scales[4] = 1.0 / translationScale; 
+  //scales[5] = 1.0 / translationScale;
 
-  const double translationScale = 10.0;   // dynamic range of translations
-  const double rotationScale    = 5000.0;   // dynamic range of rotations
-  
-  scales[0] = 1.0 / rotationScale;
-  scales[1] = 1.0 / rotationScale;
-  scales[2] = 1.0 / rotationScale;
-  scales[3] = 1.0 / translationScale; 
-  scales[4] = 1.0 / translationScale; 
-  scales[5] = 1.0 / translationScale;
-
-  unsigned long   numberOfIterations =  5000000;
-  double          gradientTolerance  =  1e-12;   // convergence criterion
-  double          valueTolerance     =  1e-12;   // convergence criterion
-  double          epsilonFunction    =  1e-13;   // convergence criterion
+  unsigned long   numberOfIterations =  1000;
+  double          gradientTolerance  =  1e-5;   // convergence criterion
+  double          valueTolerance     =  1e-5;   // convergence criterion
+  double          epsilonFunction    =  1e-6;   // convergence criterion
 
   optimizer->SetScales( scales );
   optimizer->SetNumberOfIterations( numberOfIterations );
@@ -462,7 +475,9 @@ template<class T> int DoIt( int argc, char * argv[], T )
   // can probably provide a better guess than the identity...
   registrationTransform->SetIdentity();
   RegistrationTransformType::OutputVectorType vec;
-  vec[0] = 0.0; vec[1] = 0.0; vec[2] = 0.0;
+  vec[0] = Centroid[0];
+  vec[1] = Centroid[1];
+  vec[2] = Centroid[2];
   registrationTransform->SetOffset(vec);
 
   registration->SetInitialTransformParameters( registrationTransform->GetParameters() );
