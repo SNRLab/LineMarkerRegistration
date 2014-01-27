@@ -59,8 +59,8 @@ namespace itk
  *
  * \ingroup RegistrationMetrics
  */
-template < class TFixedPointSet, class TMovingPointSet, 
-class TDistanceMap = ::itk::Image<unsigned short,::itk::GetPointSetDimension<TMovingPointSet>::PointDimension> >
+template < typename TFixedPointSet, typename TMovingPointSet, 
+typename TDistanceMap = ::itk::Image<unsigned short, TMovingPointSet::PointDimension > >
 class ITK_EXPORT EuclideanDistanceLineMetric : 
     public PointSetToPointSetMetric< TFixedPointSet, TMovingPointSet>
 {
