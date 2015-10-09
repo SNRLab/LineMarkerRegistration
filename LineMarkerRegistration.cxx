@@ -497,7 +497,7 @@ template<class T> int DoIt( int argc, char * argv[], T )
 
   try 
     {
-    registration->StartRegistration();
+    registration->Update();
     }
   catch( itk::ExceptionObject & e )
     {
