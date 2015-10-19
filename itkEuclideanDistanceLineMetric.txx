@@ -83,8 +83,8 @@ EuclideanDistanceLineMetric<TFixedPointSet,TMovingPointSet,TDistanceMap>
     }
 
 
-  PointIterator pointItr = movingPointSet->GetPoints()->Begin();
-  PointIterator pointEnd = movingPointSet->GetPoints()->End();
+  MovingPointIterator pointItr = movingPointSet->GetPoints()->Begin();
+  MovingPointIterator pointEnd = movingPointSet->GetPoints()->End();
 
   // length of measure is (number of point sets) / 2
   MeasureType measure;
@@ -142,8 +142,8 @@ EuclideanDistanceLineMetric<TFixedPointSet,TMovingPointSet,TDistanceMap>
       point1[i] = transformedPoint[i] + transformedVector[i]*10.0;
       }
     // Go trough the list of fixed point and find the closest distance
-    PointIterator pointItr2 = fixedPointSet->GetPoints()->Begin();
-    PointIterator pointEnd2 = fixedPointSet->GetPoints()->End();
+    FixedPointIterator pointItr2 = fixedPointSet->GetPoints()->Begin();
+    FixedPointIterator pointEnd2 = fixedPointSet->GetPoints()->End();
     
     double minimumDistance = NumericTraits<double>::max();
     double distance0 = 0.0;
