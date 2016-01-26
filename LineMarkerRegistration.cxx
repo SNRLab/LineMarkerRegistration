@@ -243,6 +243,8 @@ template<class T> int DoIt( int argc, char * argv[], T )
   typedef typename FixedPointSetType::PointsContainer FixedPointSetContainer;
   typedef typename FixedPointSetType::PointType FixedPointType;
 
+  typedef itk::LabelStatisticsImageFilter< InternalImageType, OutputImageType > LabelStatisticsType;
+
   //
   // Create pointset of the Z-frame
   // TODO: this has to be configurable (e.g. XML)
@@ -336,6 +338,39 @@ template<class T> int DoIt( int argc, char * argv[], T )
   FixedPointSetContainer::Pointer fixedPointSetContainer = FixedPointSetContainer::New();
   unsigned int pointId = 0;
 
+  //LabelStatisticsType::Pointer labelStatistics = LabelStatisticsType::New();
+  //labelStatistics->SetLabelInput( RelabelFilter->GetOutput() );
+  //labelStatistics->SetInput( multiScaleEnhancementFilter->GetOutput() );
+  //labelStatistics->Update();
+  //
+  //std::cout << "Number of labels: " << labelStatisticsImageFilter->GetNumberOfLabels() << std::endl;
+  //std::cout << std::endl;
+  //
+  //typedef LabelStatisticsImageFilterType::ValidLabelValuesContainerType ValidLabelValuesType;
+  //typedef LabelStatisticsImageFilterType::LabelPixelType                LabelPixelType;
+  //
+  //for(ValidLabelValuesType::const_iterator vIt=labelStatisticsImageFilter->GetValidLabelValues().begin();
+  //    vIt != labelStatisticsImageFilter->GetValidLabelValues().end();
+  //    ++vIt)
+  //  {
+  //  if ( labelStatisticsImageFilter->HasLabel(*vIt) )
+  //    {
+  //    LabelPixelType labelValue = *vIt;
+  //    std::cout << "min: " << labelStatisticsImageFilter->GetMinimum( labelValue ) << std::endl;
+  //    std::cout << "max: " << labelStatisticsImageFilter->GetMaximum( labelValue ) << std::endl;
+  //    std::cout << "median: " << labelStatisticsImageFilter->GetMedian( labelValue ) << std::endl;
+  //    std::cout << "mean: " << labelStatisticsImageFilter->GetMean( labelValue ) << std::endl;
+  //    std::cout << "sigma: " << labelStatisticsImageFilter->GetSigma( labelValue ) << std::endl;
+  //    std::cout << "variance: " << labelStatisticsImageFilter->GetVariance( labelValue ) << std::endl;
+  //    std::cout << "sum: " << labelStatisticsImageFilter->GetSum( labelValue ) << std::endl;
+  //    std::cout << "count: " << labelStatisticsImageFilter->GetCount( labelValue ) << std::endl;
+  //    //std::cout << "box: " << labelStatisticsImageFilter->GetBoundingBox( labelValue ) << std::endl; // can't output a box
+  //    std::cout << "region: " << labelStatisticsImageFilter->GetRegion( labelValue ) << std::endl;
+  //    std::cout << std::endl << std::endl;
+  //
+  //    }
+  //  }
+  
   for (int i= 0; i < nObjects; i ++) // Label 0 is background and skipped
     {
 
