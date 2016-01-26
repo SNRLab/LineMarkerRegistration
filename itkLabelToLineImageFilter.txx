@@ -137,12 +137,6 @@ LabelToLineImageFilter< TInput, TOutput >
   //std::cout << "EigenVectors (each row is an an eigen vector): " << std::endl;
   //std::cout << eigenMatrix << std::endl;
 
-  // Set axis length to reference from external routine
-  // Note that the first element of m_AxisLength[] is the principal axis.
-  m_AxisLength[0] = eigenValues[2];
-  m_AxisLength[1] = eigenValues[1];
-  m_AxisLength[2] = eigenValues[0];
-
   // Check the direction of principal component
   VectorType principalVector = eigenMatrix[2];
   double ip = principalVector * m_Normal;
@@ -162,27 +156,36 @@ LabelToLineImageFilter< TInput, TOutput >
   lineNorm.Normalize();
   
   PointListType::Iterator iter = sample->Begin();
+  VectorType vector;
   
-  // To detect the edge of the line artifact, calculate
-  // projections of the points in the line artifact, and
-  // find the farest from the center point (meanVector)
-  VectorType vector = iter.GetMeasurementVector();
-  //double min = (vector-meanVector)*lineNorm;
-  //double max = min;
+  //// To detect the edge of the line artifact, calculate
+  //// projections of the points in the line artifact, and
+  //// find the farest from the center point (meanVector)
+
+  VectorType axisVector[3];
+  axisVector[0] = eigenMatrix[2]; // principalVector
+  axisVector[1] = eigenMatrix[1];
+  axisVector[2] = eigenMatrix[0];
+
+  axisVector[0].Normalize();
+  axisVector[1].Normalize();
+  axisVector[2].Normalize();
+    
+  // Ranges of point distributions in 3 directions
+  VectorType min;
+  VectorType max;
+
+  // Initialize range parameters
+  vector = iter.GetMeasurementVector();
+  for (int i = 0; i < 3; i ++)
+    {
+    min[i] = (vector-meanVector)*axisVector[i];
+    max[i] = min[i];
+    }
   
   while (iter != sample->End())
     {
     vector = iter.GetMeasurementVector();
-    //double p = (vector-meanVector)*lineNorm;
-    //if (p < min)
-    //  {
-    //  min = p;
-    //  }
-    //else if (p > max)
-    //  {
-    //  max = p;
-    //  }
-    
     typename InputImageType::PointType point;
     typename OutputImageType::IndexType index;
     point[0] = vector[0];
@@ -190,8 +193,26 @@ LabelToLineImageFilter< TInput, TOutput >
     point[2] = vector[2];
     output->TransformPhysicalPointToIndex (point, index);
     output->SetPixel(index, pix);
+
+    // Check the range in 3 directions
+    for (int i = 0; i < 3; i ++)
+      {
+      double p = (vector-meanVector)*axisVector[i];
+      if (p < min[i])
+        {
+        min[i] = p;
+        }
+      else if (p>max[i])
+        {
+        max[i] = p;
+        }
+      }
+    
     ++ iter;
     }
+
+  // Calculate the range in 3 directions
+  m_AxisLength = max-min;
   
   //lineTip = meanVector + lineNorm * max;
   lineCenterOfMass = meanVector;

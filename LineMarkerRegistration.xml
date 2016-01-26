@@ -127,7 +127,16 @@ This work is supported by NIH (R01 CA111288, P41 EB015898, U54 EB005149, R01 CA1
 	Minimum length of the principal axis of the line artifact.
       </description>
       <label>Minimum Principal Axis Length</label>
-      <default>10.0</default>
+      <default>30.0</default>
+    </float>
+    <float>
+      <name>maximumPrincipalAxisLength</name>
+      <longflag>--maximumPrincipalAxisLength</longflag>
+      <description>
+	Maximum length of the principal axis of the line artifact.
+      </description>
+      <label>Maximum Principal Axis Length</label>
+      <default>50.0</default>
     </float>
     <float>
       <name>maximumMinorAxis</name>
