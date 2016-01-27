@@ -53,20 +53,20 @@ This work is supported by NIH (R01 CA111288, P41 EB015898, U54 EB005149, R01 CA1
       <name>sigma1</name>
       <longflag>sigma1</longflag>
       <flag>s</flag>
-      <label>Sigma1</label>
-      <description>Sigma value in physical units (e.g., mm) of the Gaussian kernel for smoothing</description>
+      <label>Sigma for Smoothing</label>
+      <description>Sigma value in physical units (e.g., mm) of the Gaussian kernel for smoothing. Adjust when registration fails due to image noise.</description>
       <default>0.5</default>
     </double>
   </parameters>
   <parameters>
-    <label>Hessian and Eigen Analysis</label>
+    <label>Line Detection by Vesselness Filter</label>
     <description>Hessian and eigen analysis parameters</description>
     <double>
       <name>sigma2</name>
       <longflag>sigma2</longflag>
       <flag>u</flag>
-      <label>Sigma</label>
-      <description>Sigma value in physical units (e.g., mm) of the Gaussian kernel for line thickness</description>
+      <label>Sigma for Line Detection</label>
+      <description>Sigma value in physical units (e.g., mm) of the Gaussian kernel for line thickness.</description>
       <default>3.0</default>
     </double>
     <double>
@@ -101,48 +101,62 @@ This work is supported by NIH (R01 CA111288, P41 EB015898, U54 EB005149, R01 CA1
       <description>Maximum Line Measure</description>
       <default>20000</default>
     </double>
+    <boolean>
+      <name>FilterByVesselness</name>
+      <longflag>--filterByVesselness</longflag>
+      <description>Filter detected objects by mean vesselness value.</description>
+      <label>Filter by Mean Vesselness</label>
+      <default>true</default>
+    </boolean>
   </parameters>
 
   <parameters>
-    <label>Threshold Parameters</label>
-    <description>Parameters for Otsu Thresholding</description>
+    <label>Marker Dimensions</label>
+    <description></description>
+    <boolean>
+      <name>FilterByDimensions</name>
+      <longflag>--filterByDimensions</longflag>
+      <description>Filter detected objects by dimensions.</description>
+      <label>Filter by Dimensions</label>
+      <default>true</default>
+    </boolean>
     <float>
       <name>minimumObjectSize</name>
       <longflag>--minimumObjectSize</longflag>
-      <description>Minimum size of object to retain (mm^2). This parameter can be used to get rid of small regions in noisy images.</description>
-      <label>Minimum Object Size (mm^2)</label>
+      <description>Minimum volume of marker to retain (mm^2). This parameter can be used to get rid of small regions in noisy images.</description>
+      <label>Minimum Volume (mm^2)</label>
       <default>100</default>
     </float>
     <float>
       <name>maximumObjectSize</name>
       <longflag>--maximumObjectSize</longflag>
-      <description>Maximum size of object to retain (mm^2). This parameter can be used to get rid of small regions in noisy images.</description>
-      <label>Maximum Object Size (mm^2)</label>
+      <description>Maximum volume of marker to retain (mm^2). This parameter can be used to get rid of small regions in noisy images.</description>
+      <label>Maximum Volume (mm^2)</label>
       <default>20000</default>
     </float>
     <float>
       <name>minimumPrincipalAxisLength</name>
       <longflag>--minimumPrincipalAxisLength</longflag>
       <description>
-	Minimum length of the principal axis of the line artifact.
+	Minimum length of the principal axis of the marker.
       </description>
-      <label>Minimum Principal Axis Length</label>
+      <label>Minimum Length (mm)</label>
       <default>20.0</default>
     </float>
     <float>
       <name>maximumPrincipalAxisLength</name>
       <longflag>--maximumPrincipalAxisLength</longflag>
       <description>
-	Maximum length of the principal axis of the line artifact.
+	Maximum length of the principal axis of the marker.
       </description>
-      <label>Maximum Principal Axis Length</label>
+      <label>Maximum Length (mm)</label>
       <default>40.0</default>
     </float>
     <float>
       <name>maximumMinorAxis</name>
       <longflag>--maximumMinorAxis</longflag>
-      <description>Maximum length of minor axis of the reagion (mm^2). This parameter can be used to get rid of shapes that does not look like a straight line.</description>
-      <label>Maximum Minor Axis Length (pixel)</label>
+      <description>Maximum length of minor axis of the reagion. This parameter can be used to get rid of shapes that does not look like a straight line.</description>
+      <label>Maximum Diameter (mm)</label>
       <default>15.0</default>
     </float>
   </parameters>

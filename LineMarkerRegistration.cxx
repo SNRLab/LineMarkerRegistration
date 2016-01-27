@@ -22,6 +22,8 @@
 #define ITK_LEAN_AND_MEAN
 #endif
 
+#include <algorithm>
+
 #include "itkHessianRecursiveGaussianImageFilter.h"
 #include "itkSmoothingRecursiveGaussianImageFilter.h"
 #include "itkSymmetricSecondRankTensor.h"
@@ -92,9 +94,6 @@ public:
       return;
       }
 
-    //std::cout << "Value = " << optimizer->GetCachedValue() << std::endl; 
-    //std::cout << "Position = "  << optimizer->GetCachedCurrentPosition();
-    //std::cout << std::endl << std::endl;
     }
    
 };
@@ -168,6 +167,15 @@ int LoadMarkerConfiguration(const char* filename, CoordSetType& points)
 }
 
 
+// For sorting
+typedef struct {
+  int label;
+  double meanVesselness;
+} LabelVesselness;
+
+bool SortByVesselness (const LabelVesselness& lhs, const LabelVesselness &rhs) { return lhs.meanVesselness > rhs.meanVesselness; }
+  
+  
 template<class T> int DoIt( int argc, char * argv[], T )
 {
   PARSE_ARGS;
@@ -270,6 +278,9 @@ template<class T> int DoIt( int argc, char * argv[], T )
     id ++;
     }
 
+  // Number of line markers in the frame. ('point' contains array of [point0, norm0, point1, norm1, ...]
+  int nMarkers = points.size() / 2;
+  
   reader->SetFileName( inputVolume.c_str() );
   writer->SetFileName( outputVolume.c_str() );
 
@@ -338,42 +349,36 @@ template<class T> int DoIt( int argc, char * argv[], T )
   FixedPointSetContainer::Pointer fixedPointSetContainer = FixedPointSetContainer::New();
   unsigned int pointId = 0;
 
-  //LabelStatisticsType::Pointer labelStatistics = LabelStatisticsType::New();
-  //labelStatistics->SetLabelInput( RelabelFilter->GetOutput() );
-  //labelStatistics->SetInput( multiScaleEnhancementFilter->GetOutput() );
-  //labelStatistics->Update();
-  //
-  //std::cout << "Number of labels: " << labelStatisticsImageFilter->GetNumberOfLabels() << std::endl;
-  //std::cout << std::endl;
-  //
-  //typedef LabelStatisticsImageFilterType::ValidLabelValuesContainerType ValidLabelValuesType;
-  //typedef LabelStatisticsImageFilterType::LabelPixelType                LabelPixelType;
-  //
-  //for(ValidLabelValuesType::const_iterator vIt=labelStatisticsImageFilter->GetValidLabelValues().begin();
-  //    vIt != labelStatisticsImageFilter->GetValidLabelValues().end();
-  //    ++vIt)
-  //  {
-  //  if ( labelStatisticsImageFilter->HasLabel(*vIt) )
-  //    {
-  //    LabelPixelType labelValue = *vIt;
-  //    std::cout << "min: " << labelStatisticsImageFilter->GetMinimum( labelValue ) << std::endl;
-  //    std::cout << "max: " << labelStatisticsImageFilter->GetMaximum( labelValue ) << std::endl;
-  //    std::cout << "median: " << labelStatisticsImageFilter->GetMedian( labelValue ) << std::endl;
-  //    std::cout << "mean: " << labelStatisticsImageFilter->GetMean( labelValue ) << std::endl;
-  //    std::cout << "sigma: " << labelStatisticsImageFilter->GetSigma( labelValue ) << std::endl;
-  //    std::cout << "variance: " << labelStatisticsImageFilter->GetVariance( labelValue ) << std::endl;
-  //    std::cout << "sum: " << labelStatisticsImageFilter->GetSum( labelValue ) << std::endl;
-  //    std::cout << "count: " << labelStatisticsImageFilter->GetCount( labelValue ) << std::endl;
-  //    //std::cout << "box: " << labelStatisticsImageFilter->GetBoundingBox( labelValue ) << std::endl; // can't output a box
-  //    std::cout << "region: " << labelStatisticsImageFilter->GetRegion( labelValue ) << std::endl;
-  //    std::cout << std::endl << std::endl;
-  //
-  //    }
-  //  }
+  LabelStatisticsType::Pointer labelStatistics = LabelStatisticsType::New();
+  labelStatistics->SetLabelInput( RelabelFilter->GetOutput() );
+  labelStatistics->SetInput( multiScaleEnhancementFilter->GetOutput() );
+  labelStatistics->Update();
   
-  for (int i= 0; i < nObjects; i ++) // Label 0 is background and skipped
-    {
+  std::cout << "Number of labels: " << labelStatistics->GetNumberOfLabels() << std::endl;
+  std::cout << "Filter by Dimensions: " << FilterByDimensions << std::endl;
+  std::cout << "Filter by Vesselness: " << FilterByVesselness << std::endl;
 
+  // Sort the labels based on the mean 'vesselness' values
+  std::vector< LabelVesselness > labels;
+  for (int i = 0; i < nObjects; i ++)
+    {
+    LabelVesselness lv;
+    lv.label = i+1;
+    lv.meanVesselness = labelStatistics->GetMean(lv.label);
+    labels.push_back(lv);
+    }
+
+  std::sort(labels.begin(), labels.end(), SortByVesselness);
+  
+  // Validate the detected objects in the order of mean vesselness value based on their diemensions.
+  // if 'FilterByVesselness' is specified, the validation process will stop as soon as it finds N
+  // valid objects, where N is the number of markers in the fiducial frame model.
+  
+  int nValidMarkers = 0;
+  
+  std::vector< LabelVesselness >::iterator lviter;
+  for (lviter = labels.begin(); lviter != labels.end(); lviter ++)
+    {
     bool fExclude = false;
       
     // According to ITK's manual:
@@ -381,8 +386,10 @@ template<class T> int DoIt( int argc, char * argv[], T )
     //  the size of each object. Object sizes are returned in a vector. The size of the background
     //  is not calculated. So the size of object #1 is GetSizeOfObjectsInPixels()[0], the size of object
     //  #2 is GetSizeOfObjectsInPixels()[1], etc."
-    float size = objectSize[i];
-    int label = i + 1;
+    //float size = objectSize[i];
+    //int label = i + 1;
+    int label = lviter->label;
+    float size = objectSize[label-1];
 
     // NOTE: size < minimumObjectSize might be redundant here, since it was already applied in the RelabelFilter.
     if (size < minimumObjectSize || size > maximumObjectSize)
@@ -404,39 +411,58 @@ template<class T> int DoIt( int argc, char * argv[], T )
       
       // If the principal axis is less than the minimumPrincipalAxisLength or 
       // if any of the minor axes are longer than maximumMinorAxis
-      if (axisLength[0] < minimumPrincipalAxisLength ||
-          axisLength[0] > maximumPrincipalAxisLength ||
-          axisLength[1] > maximumMinorAxis ||
-          axisLength[2] > maximumMinorAxis)
+      if (FilterByDimensions &&
+          (axisLength[0] < minimumPrincipalAxisLength ||
+           axisLength[0] > maximumPrincipalAxisLength ||
+           axisLength[1] > maximumMinorAxis ||
+           axisLength[2] > maximumMinorAxis))
         {
         fExclude = true;
-        //continue;
+        }
+      else
+        {
+        nValidMarkers ++;
+        }
+      
+      // if the number of valid markers exceeds the 
+      if (FilterByVesselness && nValidMarkers > nMarkers)
+        {
+        fExclude = true;
         }
 
       TransformType::Pointer transform = labelLineFilter->GetLineTransform();
       TransformType::MatrixType matrix = transform->GetMatrix();
       TransformType::OutputVectorType trans = transform->GetTranslation();
+
       point[0] = trans[0];
       point[1] = trans[1];
       point[2] = trans[2];
       norm[0]  = matrix[2][0];
       norm[1]  = matrix[2][1];
       norm[2]  = matrix[2][2];
-      std::cerr << "Detected line #"
-                << label
-                << " -> " << fExclude
-                << ": Point=("
+
+      typedef LabelStatisticsType::LabelPixelType LabelPixelType;
+      LabelPixelType labelValue = label;
+      std::cout << "Detected line #"
+                << label << ": "
+                << "Exclude=" << fExclude
+                << "; Point=("
                 << point[0] << ", "
                 << point[1] << ", "
-                << point[2] << ");"
+                << point[2] << "); "
                 << "Normal=("
                 << norm[0] << ", "
                 << norm[1] << ", "
-                << norm[2] << ");"
+                << norm[2] << "); "
                 << "axisLength=("
                 << axisLength[0] << ", "
                 << axisLength[1] << ", "
-                << axisLength[2] << ")"
+                << axisLength[2] << "); "
+                << "vessleness(min/max/mean/sigma)=("
+                << labelStatistics->GetMinimum( labelValue ) << ", "
+                << labelStatistics->GetMaximum( labelValue ) << ", "
+                << labelStatistics->GetMean( labelValue ) << ", "
+                << labelStatistics->GetSigma( labelValue ) << ")"
                 << std::endl;
               
       if (fExclude)
@@ -456,6 +482,7 @@ template<class T> int DoIt( int argc, char * argv[], T )
       
       }
     }
+  
   double nPoints = (double)pointId/2.0;
   Centroid[0] /= nPoints;
   Centroid[1] /= nPoints;
@@ -570,10 +597,8 @@ template<class T> int DoIt( int argc, char * argv[], T )
   transform->SetOffset(registrationTransform->GetOffset());
   transform->SetMatrix(registrationTransform->GetMatrix());
   
-  std::cout << "Solution: " << std::endl;
   std::cout << "Offset:   " << transform->GetOffset() << std::endl;
-  std::cout << "Rotation: " << std::endl;
-  std::cout << transform->GetMatrix() << std::endl;
+  std::cout << "Rotation: " << transform->GetMatrix() << std::endl;
 
   // Calculate Inverse Matrix to pass the transform to Slicer.
   MarkerTransformType::Pointer outputTransform = MarkerTransformType::New();
