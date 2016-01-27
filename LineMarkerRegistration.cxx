@@ -243,6 +243,8 @@ template<class T> int DoIt( int argc, char * argv[], T )
   typedef typename FixedPointSetType::PointsContainer FixedPointSetContainer;
   typedef typename FixedPointSetType::PointType FixedPointType;
 
+  typedef itk::LabelStatisticsImageFilter< InternalImageType, OutputImageType > LabelStatisticsType;
+
   //
   // Create pointset of the Z-frame
   // TODO: this has to be configurable (e.g. XML)
@@ -324,7 +326,6 @@ template<class T> int DoIt( int argc, char * argv[], T )
   // Setup a map for change label filter
   typedef itk::ChangeLabelImageFilter<OutputImageType, OutputImageType> ChangeLabelFilter;
   typedef typename ChangeLabelFilter::ChangeMapType ChangeMapType;
-  //typename std::map< ChangeLabelFilter::InputPixelType, ChangeLabelFilter::OutputPixelType >  ChangeMapType;
 
   ChangeMapType changeMap;
   FixedPointType Centroid;
@@ -336,8 +337,45 @@ template<class T> int DoIt( int argc, char * argv[], T )
   FixedPointSetType::Pointer fixedPointSet = FixedPointSetType::New();
   FixedPointSetContainer::Pointer fixedPointSetContainer = FixedPointSetContainer::New();
   unsigned int pointId = 0;
+
+  //LabelStatisticsType::Pointer labelStatistics = LabelStatisticsType::New();
+  //labelStatistics->SetLabelInput( RelabelFilter->GetOutput() );
+  //labelStatistics->SetInput( multiScaleEnhancementFilter->GetOutput() );
+  //labelStatistics->Update();
+  //
+  //std::cout << "Number of labels: " << labelStatisticsImageFilter->GetNumberOfLabels() << std::endl;
+  //std::cout << std::endl;
+  //
+  //typedef LabelStatisticsImageFilterType::ValidLabelValuesContainerType ValidLabelValuesType;
+  //typedef LabelStatisticsImageFilterType::LabelPixelType                LabelPixelType;
+  //
+  //for(ValidLabelValuesType::const_iterator vIt=labelStatisticsImageFilter->GetValidLabelValues().begin();
+  //    vIt != labelStatisticsImageFilter->GetValidLabelValues().end();
+  //    ++vIt)
+  //  {
+  //  if ( labelStatisticsImageFilter->HasLabel(*vIt) )
+  //    {
+  //    LabelPixelType labelValue = *vIt;
+  //    std::cout << "min: " << labelStatisticsImageFilter->GetMinimum( labelValue ) << std::endl;
+  //    std::cout << "max: " << labelStatisticsImageFilter->GetMaximum( labelValue ) << std::endl;
+  //    std::cout << "median: " << labelStatisticsImageFilter->GetMedian( labelValue ) << std::endl;
+  //    std::cout << "mean: " << labelStatisticsImageFilter->GetMean( labelValue ) << std::endl;
+  //    std::cout << "sigma: " << labelStatisticsImageFilter->GetSigma( labelValue ) << std::endl;
+  //    std::cout << "variance: " << labelStatisticsImageFilter->GetVariance( labelValue ) << std::endl;
+  //    std::cout << "sum: " << labelStatisticsImageFilter->GetSum( labelValue ) << std::endl;
+  //    std::cout << "count: " << labelStatisticsImageFilter->GetCount( labelValue ) << std::endl;
+  //    //std::cout << "box: " << labelStatisticsImageFilter->GetBoundingBox( labelValue ) << std::endl; // can't output a box
+  //    std::cout << "region: " << labelStatisticsImageFilter->GetRegion( labelValue ) << std::endl;
+  //    std::cout << std::endl << std::endl;
+  //
+  //    }
+  //  }
+  
   for (int i= 0; i < nObjects; i ++) // Label 0 is background and skipped
     {
+
+    bool fExclude = false;
+      
     // According to ITK's manual:
     // "Once all the objects are relabeled, the application can query the number of objects and
     //  the size of each object. Object sizes are returned in a vector. The size of the background
@@ -345,10 +383,12 @@ template<class T> int DoIt( int argc, char * argv[], T )
     //  #2 is GetSizeOfObjectsInPixels()[1], etc."
     float size = objectSize[i];
     int label = i + 1;
+
+    // NOTE: size < minimumObjectSize might be redundant here, since it was already applied in the RelabelFilter.
     if (size < minimumObjectSize || size > maximumObjectSize)
       {
       // Out of size criteria
-      changeMap[label] = 0;
+      fExclude = true;
       }
     else
       {
@@ -361,13 +401,16 @@ template<class T> int DoIt( int argc, char * argv[], T )
       typedef typename LabelLineFilterType::VectorType VectorType;
       VectorType axisLength;
       labelLineFilter->GetAxisLength(axisLength);
+      
       // If the principal axis is less than the minimumPrincipalAxisLength or 
       // if any of the minor axes are longer than maximumMinorAxis
       if (axisLength[0] < minimumPrincipalAxisLength ||
-          axisLength[1] > maximumMinorAxis || axisLength[2] > maximumMinorAxis)
+          axisLength[0] > maximumPrincipalAxisLength ||
+          axisLength[1] > maximumMinorAxis ||
+          axisLength[2] > maximumMinorAxis)
         {
-        changeMap[label] = 0;
-        continue;
+        fExclude = true;
+        //continue;
         }
 
       TransformType::Pointer transform = labelLineFilter->GetLineTransform();
@@ -381,14 +424,27 @@ template<class T> int DoIt( int argc, char * argv[], T )
       norm[2]  = matrix[2][2];
       std::cerr << "Detected line #"
                 << label
+                << " -> " << fExclude
                 << ": Point=("
                 << point[0] << ", "
                 << point[1] << ", "
-                << point[2] << "); Normal=("
+                << point[2] << ");"
+                << "Normal=("
                 << norm[0] << ", "
                 << norm[1] << ", "
-                << norm[2] << ")"
+                << norm[2] << ");"
+                << "axisLength=("
+                << axisLength[0] << ", "
+                << axisLength[1] << ", "
+                << axisLength[2] << ")"
                 << std::endl;
+              
+      if (fExclude)
+        {
+        changeMap[label] = 0;
+        continue;
+        }
+      
       fixedPointSetContainer->InsertElement(pointId, point);
       pointId ++;
       fixedPointSetContainer->InsertElement(pointId, norm);
