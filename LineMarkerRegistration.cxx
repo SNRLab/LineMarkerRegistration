@@ -353,7 +353,8 @@ template<class T> int DoIt( int argc, char * argv[], T )
   labelStatistics->SetLabelInput( RelabelFilter->GetOutput() );
   labelStatistics->SetInput( multiScaleEnhancementFilter->GetOutput() );
   labelStatistics->Update();
-  
+
+  std::cout << "Number of objects: " << nObjects << std::endl;
   std::cout << "Number of labels: " << labelStatistics->GetNumberOfLabels() << std::endl;
   std::cout << "Filter by Dimensions: " << FilterByDimensions << std::endl;
   std::cout << "Filter by Vesselness: " << FilterByVesselness << std::endl;
@@ -390,23 +391,25 @@ template<class T> int DoIt( int argc, char * argv[], T )
     //int label = i + 1;
     int label = lviter->label;
     float size = objectSize[label-1];
-
+    
+    typedef typename LabelLineFilterType::VectorType VectorType;
+    VectorType axisLength;
+    
     // NOTE: size < minimumObjectSize might be redundant here, since it was already applied in the RelabelFilter.
     if (size < minimumObjectSize || size > maximumObjectSize)
       {
       // Out of size criteria
       fExclude = true;
+      axisLength[0] = 0.0;
+      axisLength[1] = 0.0;
+      axisLength[2] = 0.0;
       }
     else
       {
       // TODO: It is probably a good idea to also check the length and thickness of
       // the segmented area using LabelToLineImageFilter::GetAxisLength().
-      FixedPointType point;
-      FixedPointType norm;
       labelLineFilter->SetLabel( label );
       labelLineFilter->Update();
-      typedef typename LabelLineFilterType::VectorType VectorType;
-      VectorType axisLength;
       labelLineFilter->GetAxisLength(axisLength);
       
       // If the principal axis is less than the minimumPrincipalAxisLength or 
@@ -429,58 +432,62 @@ template<class T> int DoIt( int argc, char * argv[], T )
         {
         fExclude = true;
         }
+      }
 
-      TransformType::Pointer transform = labelLineFilter->GetLineTransform();
-      TransformType::MatrixType matrix = transform->GetMatrix();
-      TransformType::OutputVectorType trans = transform->GetTranslation();
-
-      point[0] = trans[0];
-      point[1] = trans[1];
-      point[2] = trans[2];
-      norm[0]  = matrix[2][0];
-      norm[1]  = matrix[2][1];
-      norm[2]  = matrix[2][2];
-
-      typedef LabelStatisticsType::LabelPixelType LabelPixelType;
-      LabelPixelType labelValue = label;
-      std::cout << "Detected line #"
-                << label << ": "
-                << "Exclude=" << fExclude
-                << "; Point=("
-                << point[0] << ", "
-                << point[1] << ", "
-                << point[2] << "); "
-                << "Normal=("
-                << norm[0] << ", "
-                << norm[1] << ", "
-                << norm[2] << "); "
-                << "axisLength=("
-                << axisLength[0] << ", "
-                << axisLength[1] << ", "
-                << axisLength[2] << "); "
-                << "vessleness(min/max/mean/sigma)=("
-                << labelStatistics->GetMinimum( labelValue ) << ", "
-                << labelStatistics->GetMaximum( labelValue ) << ", "
-                << labelStatistics->GetMean( labelValue ) << ", "
-                << labelStatistics->GetSigma( labelValue ) << ")"
-                << std::endl;
-              
-      if (fExclude)
-        {
+    FixedPointType point;
+    FixedPointType norm;
+    
+    TransformType::Pointer transform = labelLineFilter->GetLineTransform();
+    TransformType::MatrixType matrix = transform->GetMatrix();
+    TransformType::OutputVectorType trans = transform->GetTranslation();
+    
+    point[0] = trans[0];
+    point[1] = trans[1];
+    point[2] = trans[2];
+    norm[0]  = matrix[2][0];
+    norm[1]  = matrix[2][1];
+    norm[2]  = matrix[2][2];
+    
+    typedef LabelStatisticsType::LabelPixelType LabelPixelType;
+    LabelPixelType labelValue = label;
+    std::cout << "Detected line #"
+              << label << ": "
+              << "Size=" << size
+              << "; Exclude=" << fExclude
+              << "; Point=("
+              << point[0] << ", "
+              << point[1] << ", "
+              << point[2] << "); "
+              << "Normal=("
+              << norm[0] << ", "
+              << norm[1] << ", "
+              << norm[2] << "); "
+              << "axisLength=("
+              << axisLength[0] << ", "
+              << axisLength[1] << ", "
+              << axisLength[2] << "); "
+              << "vessleness(min/max/mean/sigma)=("
+              << labelStatistics->GetMinimum( labelValue ) << ", "
+              << labelStatistics->GetMaximum( labelValue ) << ", "
+              << labelStatistics->GetMean( labelValue ) << ", "
+              << labelStatistics->GetSigma( labelValue ) << ")"
+              << std::endl;
+    
+    if (fExclude)
+      {
         changeMap[label] = 0;
         continue;
-        }
-      
-      fixedPointSetContainer->InsertElement(pointId, point);
-      pointId ++;
-      fixedPointSetContainer->InsertElement(pointId, norm);
-      pointId ++;
-
-      Centroid[0] += point[0];
-      Centroid[1] += point[1];
-      Centroid[2] += point[2];
-      
       }
+    
+    fixedPointSetContainer->InsertElement(pointId, point);
+    pointId ++;
+    fixedPointSetContainer->InsertElement(pointId, norm);
+    pointId ++;
+    
+    Centroid[0] += point[0];
+    Centroid[1] += point[1];
+    Centroid[2] += point[2];
+    
     }
   
   double nPoints = (double)pointId/2.0;
