@@ -450,22 +450,12 @@ template<class T> int DoIt( int argc, char * argv[], T )
     
     typedef LabelStatisticsType::LabelPixelType LabelPixelType;
     LabelPixelType labelValue = label;
-    std::cout << "Detected line #"
-              << label << ": "
-              << "Size=" << size
-              << "; Exclude=" << fExclude
-              << "; Point=("
-              << point[0] << ", "
-              << point[1] << ", "
-              << point[2] << "); "
-              << "Normal=("
-              << norm[0] << ", "
-              << norm[1] << ", "
-              << norm[2] << "); "
-              << "axisLength=("
-              << axisLength[0] << ", "
-              << axisLength[1] << ", "
-              << axisLength[2] << "); "
+    std::cout << "Detected line #" << label << ": "
+              << "Size=" << size << "; "
+              << "Exclude=" << fExclude  << "; "
+              << "Point=(" << point[0] << ", " << point[1] << ", " << point[2] << "); "
+              << "Normal=(" << norm[0] << ", " << norm[1] << ", " << norm[2] << "); "
+              << "axisLength=(" << axisLength[0] << ", " << axisLength[1] << ", " << axisLength[2] << "); "
               << "vessleness(min/max/mean/sigma)=("
               << labelStatistics->GetMinimum( labelValue ) << ", "
               << labelStatistics->GetMaximum( labelValue ) << ", "
@@ -530,7 +520,6 @@ template<class T> int DoIt( int argc, char * argv[], T )
   typedef itk::LevenbergMarquardtOptimizer OptimizerType;
   OptimizerType::Pointer      optimizer     = OptimizerType::New();
   optimizer->SetUseCostFunctionGradient(false);
-
 
   // Registration Method
   typedef itk::PointSetToPointSetRegistrationMethod< PointSetType, PointSetType > RegistrationType;
