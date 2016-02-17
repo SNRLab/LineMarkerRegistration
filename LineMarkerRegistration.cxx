@@ -516,6 +516,9 @@ template<class T> int DoIt( int argc, char * argv[], T )
   typedef itk::Euler3DTransform< double >      RegistrationTransformType;
   RegistrationTransformType::Pointer registrationTransform = RegistrationTransformType::New();
 
+  LineDistanceMetric::LineMatchFlagContainerPointer lineMatch = LineDistanceMetric::LineMatchFlagContainerType::New();
+  metric->SetLineMatchFlag(lineMatch);
+
   // Optimizer Type
   typedef itk::LevenbergMarquardtOptimizer OptimizerType;
   OptimizerType::Pointer      optimizer     = OptimizerType::New();
@@ -528,7 +531,7 @@ template<class T> int DoIt( int argc, char * argv[], T )
   
   // Scale the translation components of the Transform in the Optimizer
   OptimizerType::ScalesType scales( registrationTransform->GetNumberOfParameters() );
-  scales.Fill(0.01);
+  scales.Fill(2.0);
   //const double translationScale = 500;   // dynamic range of translations
   //const double rotationScale    = 5000;   // dynamic range of rotations
   //scales[0] = 1.0 / rotationScale;
@@ -537,6 +540,9 @@ template<class T> int DoIt( int argc, char * argv[], T )
   //scales[3] = 1.0 / translationScale; 
   //scales[4] = 1.0 / translationScale; 
   //scales[5] = 1.0 / translationScale;
+  scales[0] = 0.005;
+  scales[1] = 0.005;
+  scales[2] = 0.005;
 
   unsigned long   numberOfIterations =  1000;
   double          gradientTolerance  =  1e-5;   // convergence criterion
@@ -574,6 +580,8 @@ template<class T> int DoIt( int argc, char * argv[], T )
   CommandIterationUpdate::Pointer observer = CommandIterationUpdate::New();
   optimizer->AddObserver( itk::IterationEvent(), observer );
 
+  // First pass
+  std::cout << "Starting first pass... " << std::endl;
   try 
     {
     registration->Update();
@@ -583,6 +591,52 @@ template<class T> int DoIt( int argc, char * argv[], T )
     std::cout << e << std::endl;
     return EXIT_FAILURE;
     }
+
+  //// Check for unmatched lines and create a new point set
+  ////LineDistanceMetric::LineMatchFlagType lineMatch = metric->GetLineMatchFlag();
+  //
+  //FixedPointSetType::Pointer newFixedPointSet = FixedPointSetType::New();
+  //FixedPointSetContainer::Pointer newFixedPointSetContainer = FixedPointSetContainer::New();
+  //pointId = 0;
+  //unsigned int newPointId = 0;
+  //
+  //FixedPointSetContainer::Iterator pointItr = fixedPointSet->GetPoints()->Begin();
+  //FixedPointSetContainer::Iterator pointEnd = fixedPointSet->GetPoints()->End();
+  //
+  //while (pointItr != pointEnd)
+  //  {
+  //  if (lineMatch->GetElement(pointId))
+  //    {
+  //    FixedPointType  point;
+  //    point.CastFrom( pointItr.Value() );
+  //    newFixedPointSetContainer->InsertElement(newPointId, point);
+  //    newPointId ++;
+  //    }
+  //  else
+  //    {
+  //    std::cout << "NOT MATCHED ... [" << pointId << "]" << std::endl;
+  //    }
+  //  pointId ++;
+  //  pointItr ++;
+  //  }
+  //newFixedPointSet->SetPoints( newFixedPointSetContainer );
+  //
+  // Second pass
+  //if (pointId != newPointId)
+  //  {
+  //  std::cout << "Starting second pass... " << std::endl;
+  //  registration->SetFixedPointSet( newFixedPointSet );
+  //
+  //  try 
+  //    {
+  //    registration->Update();
+  //    }
+  //  catch( itk::ExceptionObject & e )
+  //    {
+  //    std::cout << e << std::endl;
+  //    return EXIT_FAILURE;
+  //    }
+  //  }
 
   // Convret Euler 3D transform to Rigid 3D Transform
   typedef itk::AffineTransform<double, 3> MarkerTransformType;

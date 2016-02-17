@@ -23,6 +23,7 @@
 #include "itkPoint.h"
 #include "itkPointSet.h"
 #include "itkImage.h"
+#include "itkVectorContainer.h"
 
 
 // This is a quick and dirty implementation of a metric for line to line
@@ -100,6 +101,8 @@ public:
   typedef TDistanceMap                                    DistanceMapType;
   typedef typename DistanceMapType::ConstPointer          DistanceMapPointer;
 
+  typedef itk::VectorContainer<int, bool>                 LineMatchFlagContainerType;
+  typedef typename LineMatchFlagContainerType::Pointer    LineMatchFlagContainerPointer;
 
   /** Get the number of values */
   unsigned int GetNumberOfValues() const;
@@ -128,6 +131,9 @@ public:
   itkGetConstMacro(ComputeSquaredDistance,bool);
   itkBooleanMacro(ComputeSquaredDistance);
 
+  itkSetObjectMacro(LineMatchFlag,LineMatchFlagContainerType);
+  itkGetObjectMacro(LineMatchFlag,LineMatchFlagContainerType);
+  
 protected:
   EuclideanDistanceLineMetric();
   virtual ~EuclideanDistanceLineMetric() {};
@@ -135,6 +141,8 @@ protected:
   /** PrintSelf funtion */
   void PrintSelf(std::ostream& os, Indent indent) const;
 
+  LineMatchFlagContainerPointer m_LineMatchFlag;
+    
 private:
   EuclideanDistanceLineMetric(const Self&); //purposely not implemented
   void operator=(const Self&); //purposely not implemented

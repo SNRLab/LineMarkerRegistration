@@ -150,7 +150,7 @@ This work is supported by NIH (R01 CA111288, P41 EB015898, U54 EB005149, R01 CA1
 	Maximum length of the principal axis of the marker.
       </description>
       <label>Maximum Length (mm)</label>
-      <default>40.0</default>
+      <default>50.0</default>
     </float>
     <float>
       <name>maximumMinorAxis</name>
