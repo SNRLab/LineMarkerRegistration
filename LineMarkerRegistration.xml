@@ -123,15 +123,15 @@ This work is supported by NIH (R01 CA111288, P41 EB015898, U54 EB005149, R01 CA1
     <float>
       <name>minimumObjectSize</name>
       <longflag>--minimumObjectSize</longflag>
-      <description>Minimum volume of marker to retain (mm^2). This parameter can be used to get rid of small regions in noisy images.</description>
-      <label>Minimum Volume (mm^2)</label>
+      <description>Minimum volume of marker to retain (mm^3). This parameter can be used to get rid of small regions in noisy images.</description>
+      <label>Minimum Volume (mm^3)</label>
       <default>100</default>
     </float>
     <float>
       <name>maximumObjectSize</name>
       <longflag>--maximumObjectSize</longflag>
-      <description>Maximum volume of marker to retain (mm^2). This parameter can be used to get rid of small regions in noisy images.</description>
-      <label>Maximum Volume (mm^2)</label>
+      <description>Maximum volume of marker to retain (mm^3). This parameter can be used to get rid of small regions in noisy images.</description>
+      <label>Maximum Volume (mm^3)</label>
       <default>20000</default>
     </float>
     <float>
@@ -150,7 +150,7 @@ This work is supported by NIH (R01 CA111288, P41 EB015898, U54 EB005149, R01 CA1
 	Maximum length of the principal axis of the marker.
       </description>
       <label>Maximum Length (mm)</label>
-      <default>40.0</default>
+      <default>50.0</default>
     </float>
     <float>
       <name>maximumMinorAxis</name>

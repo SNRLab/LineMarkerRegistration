@@ -33,7 +33,10 @@ EuclideanDistanceLineMetric<TFixedPointSet,TMovingPointSet,TDistanceMap>
   
   // when set to true it will be a bit faster, but it will result in minimizing
   // the sum of distances^4 instead of the sum of distances^2
-  m_ComputeSquaredDistance = false; 
+  m_ComputeSquaredDistance = false;
+
+  m_LineMatchFlag = NULL;
+  
 }
 
 /** Return the number of values, i.e the number of points in the moving set */
@@ -86,10 +89,21 @@ EuclideanDistanceLineMetric<TFixedPointSet,TMovingPointSet,TDistanceMap>
   MovingPointIterator pointItr = movingPointSet->GetPoints()->Begin();
   MovingPointIterator pointEnd = movingPointSet->GetPoints()->End();
 
-  // length of measure is (number of point sets) / 2
+
   MeasureType measure;
-  //measure.set_size(movingPointSet->GetPoints()->Size()/2);
-  measure.set_size(movingPointSet->GetPoints()->Size());
+  int nMovingPoints = movingPointSet->GetPoints()->Size();
+  measure.set_size( nMovingPoints );
+
+  if (m_LineMatchFlag.IsNull())
+    {
+    return measure;
+    }
+
+  m_LineMatchFlag->Reserve( nMovingPoints );
+  for (int i = 0; i < nMovingPoints; i ++)
+    {
+    m_LineMatchFlag->SetElement(i, true);
+    }
   
   //if (movingPointSet->GetPoints()->Size() % 2 != 0)
   //  {
@@ -102,7 +116,10 @@ EuclideanDistanceLineMetric<TFixedPointSet,TMovingPointSet,TDistanceMap>
   // 
   typename TransformType::InputVectorType tmpInputVector;
   typename TransformType::OutputVectorType tmpOutputVector;
-
+  
+  std::map< int, int > closestLine;            // closestLine[fixedLineIndex] == movingLineIndex 
+  std::map< int, double > closestLineDistance; // closestLineDistance[fixedLineIndex] == distance
+  
   std::vector<double> minimumDistanceVec;
   while( pointItr != pointEnd )
     {
@@ -149,6 +166,10 @@ EuclideanDistanceLineMetric<TFixedPointSet,TMovingPointSet,TDistanceMap>
     double distance0 = 0.0;
     double distance1 = 0.0;
 
+    int closestLineIndex = -1;
+    int lineIndex = 0;
+
+    double penalty = 100.0;
     while( pointItr2 != pointEnd2 )
       {
       typename Superclass::InputPointType  lineBasePoint;
@@ -170,14 +191,35 @@ EuclideanDistanceLineMetric<TFixedPointSet,TMovingPointSet,TDistanceMap>
         minimumDistance = dist;
         distance0 = dist0;
         distance1 = dist1;
+        closestLineIndex = lineIndex;
         }
+      lineIndex += 2;
+      }
+    
+    if (closestLine.find(closestLineIndex) == closestLine.end())
+      {
+      closestLine[closestLineIndex] = identifier;
+      closestLineDistance[closestLineIndex] = minimumDistance;
+      }
+    else if (closestLineDistance[closestLineIndex] > minimumDistance)
+      {
+      m_LineMatchFlag->SetElement(closestLine[closestLineIndex], false);
+      m_LineMatchFlag->SetElement(closestLine[closestLineIndex]+1, false);
+
+      closestLine[closestLineIndex] = identifier;
+      closestLineDistance[closestLineIndex] = minimumDistance;
+      }
+    else
+      {
+      m_LineMatchFlag->SetElement(identifier, false);
+      m_LineMatchFlag->SetElement(identifier+1, false);
       }
     measure.put(identifier,distance0);
     identifier++;
     measure.put(identifier,distance1);
     identifier++;
     }
-  
+
   return measure;
 
 }
