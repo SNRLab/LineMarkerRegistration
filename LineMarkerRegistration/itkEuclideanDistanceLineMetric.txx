@@ -180,12 +180,12 @@ EuclideanDistanceLineMetric<TFixedPointSet,TMovingPointSet,TDistanceMap>
       lineNormalVector.CastFrom( pointItr2.Value() );
       ++pointItr2;
 
-      //double dist     = vcl_sqrt(PointToLineDistanceSq(transformedPoint, lineBasePoint, lineNormalVector));
+      //double dist     = std::sqrt(PointToLineDistanceSq(transformedPoint, lineBasePoint, lineNormalVector));
       double sqdist0  = PointToLineDistanceSq(point0, lineBasePoint, lineNormalVector);
       double sqdist1  = PointToLineDistanceSq(point1, lineBasePoint, lineNormalVector);
-      double dist0    = vcl_sqrt(sqdist0);
-      double dist1    = vcl_sqrt(sqdist1);
-      double dist     = vcl_sqrt((sqdist0+sqdist1)/2.0);
+      double dist0    = std::sqrt(sqdist0);
+      double dist1    = std::sqrt(sqdist1);
+      double dist     = std::sqrt((sqdist0+sqdist1)/2.0);
       if (dist < minimumDistance)
         {
         minimumDistance = dist;
